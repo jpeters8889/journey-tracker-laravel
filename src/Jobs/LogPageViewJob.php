@@ -28,7 +28,7 @@ class LogPageViewJob implements ShouldQueue
         try {
             Http::journeyTracker()->post('/api/page-view', $this->data->toArray());
         } catch (Throwable $e) {
-            dd($e);
+//            dd($e);
         }
     }
 }
