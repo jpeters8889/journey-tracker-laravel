@@ -50,6 +50,12 @@ class LogPageViewMiddleware
             return false;
         }
 
+        $routeName = $request->route()?->getName();
+
+        if ($routeName !== null && Str::is($dontTrack, $routeName)) {
+            return false;
+        }
+
         $routeUri = $request->route()?->uri();
 
         return ! ($routeUri !== null && Str::is($dontTrack, $routeUri));
