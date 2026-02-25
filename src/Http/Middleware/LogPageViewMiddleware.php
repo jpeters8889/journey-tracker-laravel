@@ -7,6 +7,7 @@ namespace Jpeters8889\JourneyTrackerLaravel\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
 use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
 
@@ -43,10 +44,14 @@ class LogPageViewMiddleware
             return false;
         }
 
-        if (in_array($request->path(), config()->array('journey-tracker-laravel.dont-track'))) {
+        $dontTrack = config()->array('journey-tracker-laravel.dont-track');
+
+        if (Str::is($dontTrack, $request->path())) {
             return false;
         }
 
-        return ! (in_array($request->route()?->uri(), config()->array('journey-tracker-laravel.dont-track')));
+        $routeUri = $request->route()?->uri();
+
+        return ! ($routeUri !== null && Str::is($dontTrack, $routeUri));
     }
 }
