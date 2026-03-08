@@ -19,6 +19,8 @@ class JourneyTrackerServiceProvider extends PackageServiceProvider
     {
         parent::boot();
 
+        $this->app->bind('journey-tracker', fn() => app(JourneyTracker::class));
+
         Http::macro('journeyTracker', fn() => Http::baseUrl(config('journey-tracker-laravel.host'))
             ->withToken(config('journey-tracker-laravel.app-token'))
             ->withoutVerifying()

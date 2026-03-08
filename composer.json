@@ -22,7 +22,10 @@
     "laravel": {
       "providers": [
         "Jpeters8889\\JourneyTrackerLaravel\\JourneyTrackerServiceProvider"
-      ]
+      ],
+      "aliases": {
+        "JourneyTracker": "Jpeters8889\\JourneyTrackerLaravel\\Facades\\JourneyTracker"
+      }
     }
   }
 }
