@@ -11,6 +11,7 @@ final readonly class QueuedPageViewData
         public string $path,
         public ?string $route,
         public int $timestamp,
+        public ?string $userAgent = null,
     ) {
         //
     }
@@ -22,6 +23,7 @@ final readonly class QueuedPageViewData
             'path' => $this->path,
             'route' => $this->route,
             'timestamp' => $this->timestamp,
+            'user_agent' => $this->userAgent,
         ];
     }
 }

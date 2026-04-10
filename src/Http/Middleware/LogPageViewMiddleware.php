@@ -21,6 +21,7 @@ class LogPageViewMiddleware
                 $request->path(),
                 $request->route()?->getName(),
                 now()->getTimestamp(),
+                $request->userAgent(),
             );
 
             LogPageViewJob::dispatch($data);
