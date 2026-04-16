@@ -15,24 +15,26 @@ class LogPageViewMiddleware
 {
     public function handle(Request $request, Closure $next): mixed
     {
+        $response = $next($request);
+
         if ($this->shouldTrack($request)) {
-            $data = new QueuedPageViewData(
-                $request->session()->getId(),
+            $sessionId = $request->session()->getId();
+
+            LogPageViewJob::dispatch(new QueuedPageViewData(
+                $sessionId,
                 $request->path(),
                 $request->route()?->getName(),
                 now()->getTimestamp(),
                 $request->userAgent(),
-            );
+            ));
 
-            LogPageViewJob::dispatch($data);
-
-            $request->headers->set('X-Journey-Token', Crypt::encrypt([
-                'session_id' => $request->session()->getId(),
+            $response->headers->set('X-Journey-Token', Crypt::encrypt([
+                'session_id' => $sessionId,
                 'path' => $request->path(),
             ]));
         }
 
-        return $next($request);
+        return $response;
     }
 
     protected function shouldTrack(Request $request): bool
