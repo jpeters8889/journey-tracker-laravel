@@ -13,11 +13,22 @@ use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
 
 class LogPageViewMiddleware
 {
+    private static ?\Closure $tokenCallback = null;
+
+    public static function getToken(): ?string
+    {
+        return self::$tokenCallback ? (self::$tokenCallback)() : null;
+    }
+
     public function handle(Request $request, Closure $next): mixed
     {
+        self::$tokenCallback = $this->shouldTrack($request)
+            ? fn (): string => Crypt::encrypt(['session_id' => $request->session()->getId(), 'path' => $request->path()])
+            : null;
+
         $response = $next($request);
 
-        if ($this->shouldTrack($request)) {
+        if (self::$tokenCallback !== null) {
             $sessionId = $request->session()->getId();
 
             LogPageViewJob::dispatch(new QueuedPageViewData(
