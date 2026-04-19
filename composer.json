@@ -1,7 +1,7 @@
 {
     "name": "jpeters8889/journey-tracker-laravel",
     "type": "library",
-  "version": "0.1.2",
+  "version": "0.2.0",
     "require": {
         "php" : "^8.3",
         "laravel/framework": "^12.0",
