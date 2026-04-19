@@ -58,7 +58,7 @@ class LogPageViewMiddleware
             return false;
         }
 
-        $dontTrack = config()->array('journey-tracker-laravel.dont-track');
+        $dontTrack = array_map(fn(string $pattern): string => ltrim($pattern, '/'), config()->array('journey-tracker-laravel.dont-track'));
 
         if (Str::is($dontTrack, $request->path())) {
             return false;
