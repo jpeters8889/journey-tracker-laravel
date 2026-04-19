@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Facade;
  * @see \Jpeters8889\JourneyTrackerLaravel\JourneyTracker
  *
  * @method static void tag(string $tag)
+ * @method static string heartbeatScript()
  */
 class JourneyTracker extends Facade
 {
