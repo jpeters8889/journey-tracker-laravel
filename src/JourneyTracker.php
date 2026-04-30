@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedTagData;
 use Jpeters8889\JourneyTrackerLaravel\Http\Middleware\LogPageViewMiddleware;
 use Jpeters8889\JourneyTrackerLaravel\Jobs\AssignTagJob;
+use Jpeters8889\JourneyTrackerLaravel\Query\QueryBuilder;
 
 class JourneyTracker
 {
@@ -20,6 +21,11 @@ class JourneyTracker
             $this->request->session()->getId(),
             $tag,
         ));
+    }
+
+    public function query(): QueryBuilder
+    {
+        return new QueryBuilder();
     }
 
     public function heartbeatScript(): string
