@@ -6,6 +6,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Jpeters8889\JourneyTrackerLaravel\Enums\EventType;
 use Jpeters8889\JourneyTrackerLaravel\Query\EventFilter;
+use Jpeters8889\JourneyTrackerLaravel\Query\PageFilter;
 use Jpeters8889\JourneyTrackerLaravel\Query\QueryBuilder;
 use Jpeters8889\JourneyTrackerLaravel\Query\QueryResponse;
 
@@ -175,6 +176,39 @@ it('returns a QueryResponse instance from get()', function (): void {
 
     expect($response)->toBeInstanceOf(QueryResponse::class)
         ->and($response->get('signups'))->toBe(42);
+});
+
+it('sends has.pages on the correct descriptor when withPage() is called', function (): void {
+    fakeQueryResponse();
+
+    (new QueryBuilder())
+        ->count('home_events')
+        ->withPage(fn(PageFilter $f): PageFilter => $f->path('/home'))
+        ->get();
+
+    Http::assertSent(function (Request $request): bool {
+        $descriptor = $request->data()['data'][0];
+
+        return $descriptor['as'] === 'home_events'
+            && $descriptor['has']['pages'][0] === ['path' => '/home'];
+    });
+});
+
+it('applies withPage() to the last count() descriptor only', function (): void {
+    fakeQueryResponse(['first' => 1, 'second' => 2]);
+
+    (new QueryBuilder())
+        ->count('first')
+        ->count('second')
+        ->withPage(fn(PageFilter $f): PageFilter => $f->path('/home'))
+        ->get();
+
+    Http::assertSent(function (Request $request): bool {
+        $data = $request->data()['data'];
+
+        return ! array_key_exists('pages', $data[0]['has'])
+            && isset($data[1]['has']['pages']);
+    });
 });
 
 it('sends the raw payload verbatim and returns a QueryResponse', function (): void {

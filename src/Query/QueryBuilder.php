@@ -61,6 +61,16 @@ class QueryBuilder
         return $this;
     }
 
+    public function withPage(Closure $filter): static
+    {
+        $pageFilter = new PageFilter();
+        $filter($pageFilter);
+
+        $this->descriptors[array_key_last($this->descriptors)]->addPageFilter($pageFilter);
+
+        return $this;
+    }
+
     public function get(): QueryResponse
     {
         /** @var array<string, int|list<array{date: string, count: int}>> $data */

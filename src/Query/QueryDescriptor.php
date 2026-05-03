@@ -9,11 +9,19 @@ class QueryDescriptor
     /** @var list<EventFilter> */
     private array $eventFilters = [];
 
+    /** @var list<PageFilter> */
+    private array $pageFilters = [];
+
     public function __construct(public readonly string $alias) {}
 
     public function addEventFilter(EventFilter $filter): void
     {
         $this->eventFilters[] = $filter;
+    }
+
+    public function addPageFilter(PageFilter $filter): void
+    {
+        $this->pageFilters[] = $filter;
     }
 
     /** @return array<string, mixed> */
@@ -25,6 +33,13 @@ class QueryDescriptor
             $has['events'] = array_map(
                 fn(EventFilter $filter): array => $filter->toArray(),
                 $this->eventFilters,
+            );
+        }
+
+        if ($this->pageFilters !== []) {
+            $has['pages'] = array_map(
+                fn(PageFilter $filter): array => $filter->toArray(),
+                $this->pageFilters,
             );
         }
 

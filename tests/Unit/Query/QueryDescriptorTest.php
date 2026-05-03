@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Jpeters8889\JourneyTrackerLaravel\Enums\EventType;
 use Jpeters8889\JourneyTrackerLaravel\Query\EventFilter;
+use Jpeters8889\JourneyTrackerLaravel\Query\PageFilter;
 use Jpeters8889\JourneyTrackerLaravel\Query\QueryDescriptor;
 
 it('always emits the has key even with no filters', function (): void {
@@ -40,4 +41,30 @@ it('maps multiple filters into the events array', function (): void {
 
 it('uses the alias in the as key', function (): void {
     expect((new QueryDescriptor('my_alias'))->toArray()['as'])->toBe('my_alias');
+});
+
+it('does not include pages in has when no page filters are added', function (): void {
+    $descriptor = new QueryDescriptor('my_metric');
+
+    expect($descriptor->toArray()['has'])->not->toHaveKey('pages');
+});
+
+it('includes pages in has when a page filter is added', function (): void {
+    $descriptor = new QueryDescriptor('home_events');
+    $descriptor->addPageFilter((new PageFilter())->path('/home'));
+
+    expect($descriptor->toArray()['has'])->toHaveKey('pages')
+        ->and($descriptor->toArray()['has']['pages'])->toHaveCount(1);
+});
+
+it('maps multiple page filters into the pages array', function (): void {
+    $descriptor = new QueryDescriptor('funnel');
+    $descriptor->addPageFilter((new PageFilter())->path('/start'));
+    $descriptor->addPageFilter((new PageFilter())->path('/end'));
+
+    $pages = $descriptor->toArray()['has']['pages'];
+
+    expect($pages)->toHaveCount(2)
+        ->and($pages[0])->toBe(['path' => '/start'])
+        ->and($pages[1])->toBe(['path' => '/end']);
 });
