@@ -68,3 +68,24 @@ it('maps multiple page filters into the pages array', function (): void {
         ->and($pages[0])->toBe(['path' => '/start'])
         ->and($pages[1])->toBe(['path' => '/end']);
 });
+
+it('adds an event filter via the fluent withEvent() method', function (): void {
+    $descriptor = (new QueryDescriptor('clicks'))
+        ->withEvent(fn(EventFilter $f): EventFilter => $f->type(EventType::CLICKED));
+
+    expect($descriptor->toArray()['has']['events'][0])->toBe(['type' => 'clicked']);
+});
+
+it('adds a page filter via the fluent withPage() method', function (): void {
+    $descriptor = (new QueryDescriptor('home'))
+        ->withPage(fn(PageFilter $f): PageFilter => $f->path('/home'));
+
+    expect($descriptor->toArray()['has']['pages'][0])->toBe(['path' => '/home']);
+});
+
+it('returns the same instance from withEvent() and withPage() for chaining', function (): void {
+    $descriptor = new QueryDescriptor('metric');
+
+    expect($descriptor->withEvent(fn(EventFilter $f): EventFilter => $f->type(EventType::CLICKED)))->toBe($descriptor)
+        ->and($descriptor->withPage(fn(PageFilter $f): PageFilter => $f->path('/home')))->toBe($descriptor);
+});

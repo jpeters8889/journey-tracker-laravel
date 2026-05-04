@@ -8,6 +8,7 @@ use Jpeters8889\JourneyTrackerLaravel\Enums\EventType;
 use Jpeters8889\JourneyTrackerLaravel\Query\EventFilter;
 use Jpeters8889\JourneyTrackerLaravel\Query\PageFilter;
 use Jpeters8889\JourneyTrackerLaravel\Query\QueryBuilder;
+use Jpeters8889\JourneyTrackerLaravel\Query\QueryDescriptor;
 use Jpeters8889\JourneyTrackerLaravel\Query\QueryResponse;
 
 function fakeQueryResponse(array $data = ['metric' => 1]): void
@@ -23,6 +24,19 @@ it('sends type count in every payload', function (): void {
     (new QueryBuilder())->count('metric')->get();
 
     Http::assertSent(fn(Request $request): bool => $request->data()['type'] === 'count');
+});
+
+it('sends today\'s date for both from and to when today() is called', function (): void {
+    fakeQueryResponse();
+
+    (new QueryBuilder())->today()->count('metric')->get();
+
+    $today = today()->format('Y-m-d');
+
+    Http::assertSent(fn(Request $request): bool =>
+        $request->data()['from'] === $today &&
+        $request->data()['to'] === $today
+    );
 });
 
 it('sends from and to when set via between()', function (): void {
@@ -176,6 +190,67 @@ it('returns a QueryResponse instance from get()', function (): void {
 
     expect($response)->toBeInstanceOf(QueryResponse::class)
         ->and($response->get('signups'))->toBe(42);
+});
+
+it('configures the descriptor via closure when count() receives one', function (): void {
+    fakeQueryResponse();
+
+    (new QueryBuilder())
+        ->count('clicks', fn(QueryDescriptor $d): QueryDescriptor => $d
+            ->withEvent(fn(EventFilter $f): EventFilter => $f->type(EventType::CLICKED)->identifier('btn'))
+        )
+        ->get();
+
+    Http::assertSent(function (Request $request): bool {
+        $descriptor = $request->data()['data'][0];
+
+        return $descriptor['as'] === 'clicks'
+            && $descriptor['has']['events'][0] === ['type' => 'clicked', 'identifier' => 'btn'];
+    });
+});
+
+it('configures page and event filters via closure in the same count()', function (): void {
+    fakeQueryResponse();
+
+    (new QueryBuilder())
+        ->count('home_clicks', fn(QueryDescriptor $d): QueryDescriptor => $d
+            ->withPage(fn(PageFilter $f): PageFilter => $f->path('/home'))
+            ->withEvent(fn(EventFilter $f): EventFilter => $f->type(EventType::CLICKED))
+        )
+        ->get();
+
+    Http::assertSent(function (Request $request): bool {
+        $descriptor = $request->data()['data'][0];
+
+        return isset($descriptor['has']['pages'])
+            && isset($descriptor['has']['events'])
+            && $descriptor['has']['pages'][0] === ['path' => '/home']
+            && $descriptor['has']['events'][0] === ['type' => 'clicked'];
+    });
+});
+
+it('handles multiple count() calls each with their own closure', function (): void {
+    fakeQueryResponse(['page_views' => 10, 'shares' => 3]);
+
+    (new QueryBuilder())
+        ->count('page_views', fn(QueryDescriptor $d): QueryDescriptor => $d
+            ->withPage(fn(PageFilter $f): PageFilter => $f->path('/home'))
+        )
+        ->count('shares', fn(QueryDescriptor $d): QueryDescriptor => $d
+            ->withPage(fn(PageFilter $f): PageFilter => $f->path('/home'))
+            ->withEvent(fn(EventFilter $f): EventFilter => $f->identifier('share-button'))
+        )
+        ->get();
+
+    Http::assertSent(function (Request $request): bool {
+        $data = $request->data()['data'];
+
+        return count($data) === 2
+            && $data[0]['as'] === 'page_views'
+            && ! array_key_exists('events', $data[0]['has'])
+            && $data[1]['as'] === 'shares'
+            && isset($data[1]['has']['events']);
+    });
 });
 
 it('sends has.pages on the correct descriptor when withPage() is called', function (): void {

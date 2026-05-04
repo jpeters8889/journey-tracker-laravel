@@ -37,6 +37,11 @@ class QueryBuilder
         return $this->from($from)->to($to);
     }
 
+    public function today(): static
+    {
+        return $this->from(today())->to(today());
+    }
+
     public function daily(): static
     {
         $this->daily = true;
@@ -44,9 +49,15 @@ class QueryBuilder
         return $this;
     }
 
-    public function count(string $alias): static
+    public function count(string $alias, ?Closure $configure = null): static
     {
-        $this->descriptors[] = new QueryDescriptor($alias);
+        $descriptor = new QueryDescriptor($alias);
+
+        if ($configure !== null) {
+            $configure($descriptor);
+        }
+
+        $this->descriptors[] = $descriptor;
 
         return $this;
     }

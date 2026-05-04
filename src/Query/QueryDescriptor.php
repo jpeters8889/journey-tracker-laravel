@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Jpeters8889\JourneyTrackerLaravel\Query;
 
+use Closure;
+
 class QueryDescriptor
 {
     /** @var list<EventFilter> */
@@ -22,6 +24,24 @@ class QueryDescriptor
     public function addPageFilter(PageFilter $filter): void
     {
         $this->pageFilters[] = $filter;
+    }
+
+    public function withEvent(Closure $filter): static
+    {
+        $eventFilter = new EventFilter();
+        $filter($eventFilter);
+        $this->eventFilters[] = $eventFilter;
+
+        return $this;
+    }
+
+    public function withPage(Closure $filter): static
+    {
+        $pageFilter = new PageFilter();
+        $filter($pageFilter);
+        $this->pageFilters[] = $pageFilter;
+
+        return $this;
     }
 
     /** @return array<string, mixed> */
