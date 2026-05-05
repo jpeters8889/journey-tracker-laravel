@@ -23,10 +23,12 @@ it('returns the full data array via all()', function (): void {
     expect($response->all())->toBe($data);
 });
 
-it('returns daily breakdown arrays', function (): void {
-    $daily = [['date' => '2024-01-01', 'count' => 5], ['date' => '2024-01-02', 'count' => 3]];
-    $response = new QueryResponse(['daily_clicks' => $daily]);
+it('returns daily breakdown via all() as date-keyed rows', function (): void {
+    $daily = [
+        ['date' => '2024-01-01', 'clicks' => 5, 'views' => 10],
+        ['date' => '2024-01-02', 'clicks' => 3, 'views' => 7],
+    ];
+    $response = new QueryResponse($daily);
 
-    expect($response->get('daily_clicks'))->toBe($daily)
-        ->and($response->daily_clicks)->toBe($daily);
+    expect($response->all())->toBe($daily);
 });
