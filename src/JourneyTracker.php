@@ -20,7 +20,7 @@ class JourneyTracker
         AssignTagJob::dispatch(new QueuedTagData(
             $this->request->session()->getId(),
             $tag,
-        ));
+        ))->onConnection(config('journey-tracker-laravel.queue-connection'));
     }
 
     public function query(): QueryBuilder

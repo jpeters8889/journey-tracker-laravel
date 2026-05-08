@@ -10,7 +10,8 @@ class EventStoreController
 {
     public function __invoke(EventStoreRequest $request): Response
     {
-        LogPageEventJob::dispatch($request->toData());
+        LogPageEventJob::dispatch($request->toData())
+            ->onConnection(config('journey-tracker-laravel.queue-connection'));
 
         return response()->noContent();
     }
