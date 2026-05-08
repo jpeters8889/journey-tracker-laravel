@@ -37,7 +37,7 @@ class LogPageViewMiddleware
                 $request->route()?->getName(),
                 now()->getTimestamp(),
                 $request->userAgent(),
-            ))->onConnection(config('journey-tracker-laravel.queue-connection'));
+            ))->onQueue(config('journey-tracker-laravel.queue'));
 
             $response->headers->set('X-Journey-Token', Crypt::encrypt([
                 'session_id' => $sessionId,
