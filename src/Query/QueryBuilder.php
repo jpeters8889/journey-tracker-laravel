@@ -37,9 +37,11 @@ class QueryBuilder
         return $this->from($from)->to($to);
     }
 
-    public function today(): static
+    public function today(string|\DateTimeInterface|null $today): static
     {
-        return $this->from(today())->to(today());
+        $today ??= today();
+
+        return $this->from($today)->to($today);
     }
 
     public function daily(): static
