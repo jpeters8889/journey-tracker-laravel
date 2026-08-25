@@ -6,72 +6,56 @@ namespace Jpeters8889\JourneyTrackerLaravel\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Str;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
 use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
+use Jpeters8889\JourneyTrackerLaravel\JourneyTracker;
+use Jpeters8889\JourneyTrackerLaravel\Support\TrackingPolicy;
 
 class LogPageViewMiddleware
 {
-    private static ?\Closure $tokenCallback = null;
+    public function __construct(
+        protected JourneyTracker $journeyTracker,
+        protected TrackingPolicy $trackingPolicy,
+    ) {
+        //
+    }
 
+    /**
+     * @deprecated Use JourneyTracker::token(), or the JourneyTracker facade. Removed in 1.0.
+     */
     public static function getToken(): ?string
     {
-        return self::$tokenCallback ? (self::$tokenCallback)() : null;
+        return app(JourneyTracker::class)->token();
     }
 
     public function handle(Request $request, Closure $next): mixed
     {
-        self::$tokenCallback = $this->shouldTrack($request)
-            ? fn (): string => Crypt::encrypt(['session_id' => $request->session()->getId(), 'path' => $request->path()])
-            : null;
+        if ($this->trackingPolicy->shouldTrackRequest($request)) {
+            $this->journeyTracker->startTracking();
+        }
 
         $response = $next($request);
 
-        if (self::$tokenCallback !== null) {
-            $sessionId = $request->session()->getId();
+        $sessionId = $this->journeyTracker->sessionId();
 
-            LogPageViewJob::dispatch(new QueuedPageViewData(
-                $sessionId,
-                $request->path(),
-                $request->route()?->getName(),
-                time(),
-                $request->userAgent(),
-            ))->onQueue(config('journey-tracker-laravel.queue'));
+        if ($sessionId === null) {
+            return $response;
+        }
 
-            $response->headers->set('X-Journey-Token', Crypt::encrypt([
-                'session_id' => $sessionId,
-                'path' => $request->path(),
-            ]));
+        LogPageViewJob::dispatch(new QueuedPageViewData(
+            $sessionId,
+            $request->path(),
+            $request->route()?->getName(),
+            time(),
+            $request->userAgent(),
+        ))->onQueue(config('journey-tracker-laravel.queue'));
+
+        $token = $this->journeyTracker->token();
+
+        if ($token !== null) {
+            $response->headers->set('X-Journey-Token', $token);
         }
 
         return $response;
-    }
-
-    protected function shouldTrack(Request $request): bool
-    {
-        if (config()->boolean('journey-tracker-laravel.enabled') === false) {
-            return false;
-        }
-
-        if ($request->method() !== 'GET') {
-            return false;
-        }
-
-        $dontTrack = array_map(fn(string $pattern): string => ltrim($pattern, '/'), config()->array('journey-tracker-laravel.dont-track'));
-
-        if (Str::is($dontTrack, $request->path())) {
-            return false;
-        }
-
-        $routeName = $request->route()?->getName();
-
-        if ($routeName !== null && Str::is($dontTrack, $routeName)) {
-            return false;
-        }
-
-        $routeUri = $request->route()?->uri();
-
-        return ! ($routeUri !== null && Str::is($dontTrack, $routeUri));
     }
 }

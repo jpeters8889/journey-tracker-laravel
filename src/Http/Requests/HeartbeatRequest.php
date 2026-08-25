@@ -14,6 +14,7 @@ class HeartbeatRequest extends FormRequest
     {
         return [
             'token' => ['required', 'string'],
+            'path' => ['sometimes', 'string'],
         ];
     }
 
@@ -24,10 +25,21 @@ class HeartbeatRequest extends FormRequest
 
         return new QueuedPageViewData(
             sessionId: $token['session_id'],
-            path: $token['path'],
+            path: $this->trackedPath($token['path']),
             route: null,
             timestamp: time(),
             userAgent: $this->userAgent(),
         );
+    }
+
+    protected function trackedPath(string $fallback): string
+    {
+        $supplied = ltrim($this->string('path')->toString(), '/');
+
+        if ($supplied === '') {
+            return $fallback;
+        }
+
+        return $supplied;
     }
 }
