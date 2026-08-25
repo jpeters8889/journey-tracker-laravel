@@ -26,16 +26,36 @@ it('sends type count in every payload', function (): void {
     Http::assertSent(fn(Request $request): bool => $request->data()['type'] === 'count');
 });
 
-it('sends today\'s date for both from and to when today() is called', function (): void {
+it('sends the today keyword for both from and to when today() is called', function (): void {
     fakeQueryResponse();
 
     (new QueryBuilder())->today()->count('metric')->get();
 
-    $today = today()->format('Y-m-d');
+    Http::assertSent(fn(Request $request): bool =>
+        $request->data()['from'] === 'today' &&
+        $request->data()['to'] === 'today'
+    );
+});
+
+it('does not resolve today against this application\'s timezone', function (string $timezone): void {
+    config(['app.timezone' => $timezone]);
+    date_default_timezone_set($timezone);
+
+    fakeQueryResponse();
+
+    (new QueryBuilder())->today()->count('metric')->get();
+
+    Http::assertSent(fn(Request $request): bool => $request->data()['from'] === 'today');
+})->with(['UTC', 'Europe/London', 'America/Los_Angeles', 'Pacific/Chatham']);
+
+it('still sends an explicit date when one is passed to today()', function (): void {
+    fakeQueryResponse();
+
+    (new QueryBuilder())->today('2026-08-24')->count('metric')->get();
 
     Http::assertSent(fn(Request $request): bool =>
-        $request->data()['from'] === $today &&
-        $request->data()['to'] === $today
+        $request->data()['from'] === '2026-08-24' &&
+        $request->data()['to'] === '2026-08-24'
     );
 });
 

@@ -35,7 +35,7 @@ class LogPageViewMiddleware
                 $sessionId,
                 $request->path(),
                 $request->route()?->getName(),
-                now()->getTimestamp(),
+                time(),
                 $request->userAgent(),
             ))->onQueue(config('journey-tracker-laravel.queue'));
 
