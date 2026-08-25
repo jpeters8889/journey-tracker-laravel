@@ -6,6 +6,7 @@ namespace Jpeters8889\JourneyTrackerLaravel\Query;
 
 use Closure;
 use Illuminate\Support\Facades\Http;
+use DateTimeInterface;
 
 class QueryBuilder
 {
@@ -18,26 +19,26 @@ class QueryBuilder
     /** @var list<QueryDescriptor> */
     private array $descriptors = [];
 
-    public function from(string|\DateTimeInterface $date): static
+    public function from(string|DateTimeInterface $date): static
     {
-        $this->from = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : $date;
+        $this->from = $date instanceof DateTimeInterface ? $date->format('Y-m-d') : $date;
 
         return $this;
     }
 
-    public function to(string|\DateTimeInterface $date): static
+    public function to(string|DateTimeInterface $date): static
     {
-        $this->to = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : $date;
+        $this->to = $date instanceof DateTimeInterface ? $date->format('Y-m-d') : $date;
 
         return $this;
     }
 
-    public function between(string|\DateTimeInterface $from, string|\DateTimeInterface $to): static
+    public function between(string|DateTimeInterface $from, string|DateTimeInterface $to): static
     {
         return $this->from($from)->to($to);
     }
 
-    public function today(string|\DateTimeInterface|null $today = null): static
+    public function today(string|DateTimeInterface|null $today = null): static
     {
         $today ??= 'today';
 
@@ -55,7 +56,7 @@ class QueryBuilder
     {
         $descriptor = new QueryDescriptor($alias);
 
-        if ($configure !== null) {
+        if ($configure instanceof Closure) {
             $configure($descriptor);
         }
 
@@ -119,7 +120,7 @@ class QueryBuilder
         }
 
         $payload['data'] = array_map(
-            fn(QueryDescriptor $descriptor): array => $descriptor->toArray(),
+            fn (QueryDescriptor $descriptor): array => $descriptor->toArray(),
             $this->descriptors,
         );
 

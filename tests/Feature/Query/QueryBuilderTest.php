@@ -14,14 +14,15 @@ it('can be called via the facade and returns a QueryResponse', function (): void
 
     $response = JourneyTracker::query()
         ->count('signups')
-        ->withEvent(fn(EventFilter $f): EventFilter => $f->type(EventType::CLICKED)->identifier('signup'))
+        ->withEvent(fn (EventFilter $f): EventFilter => $f->type(EventType::CLICKED)->identifier('signup'))
         ->get();
 
     expect($response)->toBeInstanceOf(QueryResponse::class)
         ->and($response->get('signups'))->toBe(42)
         ->and($response->signups)->toBe(42);
 
-    Http::assertSent(fn(Request $request): bool =>
+    Http::assertSent(
+        fn (Request $request): bool =>
         str_ends_with($request->url(), '/api/query') &&
         $request->method() === 'POST' &&
         $request->data()['type'] === 'count'

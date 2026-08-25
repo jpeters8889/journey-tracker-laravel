@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Jpeters8889\JourneyTrackerLaravel;
 
 use Illuminate\Support\Facades\Blade;
@@ -16,18 +18,20 @@ class JourneyTrackerServiceProvider extends PackageServiceProvider
             ->hasRoute('api');
     }
 
-    public function boot()
+    public function boot(): void
     {
         parent::boot();
 
-        $this->app->bind('journey-tracker', fn() => app(JourneyTracker::class));
+        $this->app->bind('journey-tracker', fn () => app(JourneyTracker::class));
 
-        Blade::directive('journeyTracker', fn (): string => '<?php echo app(\'journey-tracker\')->heartbeatScript(); ?>');
+        Blade::directive('journeyTracker', fn (): string => "<?php echo app('journey-tracker')->heartbeatScript(); ?>");
 
-        Http::macro('journeyTracker', fn() => Http::baseUrl(config('journey-tracker-laravel.host'))
-            ->withToken(config('journey-tracker-laravel.app-token'))
-            ->withoutVerifying()
-            ->acceptJson()
+        Http::macro(
+            'journeyTracker',
+            fn () => Http::baseUrl(config('journey-tracker-laravel.host'))
+                ->withToken(config('journey-tracker-laravel.app-token'))
+                ->withoutVerifying()
+                ->acceptJson()
         );
     }
 }

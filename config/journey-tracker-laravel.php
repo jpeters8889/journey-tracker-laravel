@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'enabled' => env('JOURNEY_TRACKER_ENABLED', true),
 
@@ -15,5 +17,5 @@ return [
 
     'host' => env('JOURNEY_TRACKER_HOST', 'https://journey-tracker.cloud'),
 
-    'queue' => env('JOURNEY_TRACKER_QUEUE', null),
+    'queue' => env('JOURNEY_TRACKER_QUEUE'),
 ];

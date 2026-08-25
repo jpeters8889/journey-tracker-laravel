@@ -2,4 +2,6 @@
 
 declare(strict_types=1);
 
-uses(Tests\TestCase::class)->in('Unit', 'Feature');
+use Tests\TestCase;
+
+pest()->extend(TestCase::class)->in('Unit', 'Feature');

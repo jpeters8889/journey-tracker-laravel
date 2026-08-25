@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Route;
 use Jpeters8889\JourneyTrackerLaravel\Http\Controllers\EventStoreController;
 use Jpeters8889\JourneyTrackerLaravel\Http\Controllers\HeartbeatController;

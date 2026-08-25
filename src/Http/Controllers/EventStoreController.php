@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Jpeters8889\JourneyTrackerLaravel\Http\Controllers;
 
 use Illuminate\Http\Response;

@@ -1,15 +1,33 @@
 {
+    "$schema": "https://getcomposer.org/schema.json",
     "name": "jpeters8889/journey-tracker-laravel",
     "type": "library",
-  "version": "0.6.0",
+    "license": "MIT",
     "require": {
-        "php" : "^8.3",
+        "php": "^8.3",
         "laravel/framework": "^12.0|^13.0",
         "spatie/laravel-package-tools": "^1.92"
+    },
+    "require-dev": {
+        "driftingly/rector-laravel": "^2.5",
+        "larastan/larastan": "^3.10.0",
+        "laravel/pint": "^1.30.5",
+        "orchestra/testbench": "^10.0|^11.0",
+        "pestphp/pest": "^5.1.1",
+        "pestphp/pest-plugin-laravel": "^5.0.1",
+        "pestphp/pest-plugin-phpstan": "^5.2",
+        "pestphp/pest-plugin-rector": "^5.0.4",
+        "pestphp/pest-plugin-type-coverage": "^5.0.2",
+        "rector/rector": "^2.6.3"
     },
     "autoload": {
         "psr-4": {
             "Jpeters8889\\JourneyTrackerLaravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
         }
     },
     "authors": [
@@ -18,29 +36,50 @@
             "email": "jamie@jamie-peters.co.uk"
         }
     ],
-  "extra": {
-    "laravel": {
-      "providers": [
-        "Jpeters8889\\JourneyTrackerLaravel\\JourneyTrackerServiceProvider"
-      ],
-      "aliases": {
-        "JourneyTracker": "Jpeters8889\\JourneyTrackerLaravel\\Facades\\JourneyTracker"
-      }
-    }
-  },
-    "require-dev": {
-        "pestphp/pest": "*",
-        "pestphp/pest-plugin-laravel": "*",
-        "orchestra/testbench": "*"
+    "scripts": {
+        "phpstan": "@composer run stan",
+        "stan": [
+            "Composer\\Config::disableProcessTimeout",
+            "vendor/bin/phpstan analyse --memory-limit 4048M"
+        ],
+        "pint": "vendor/bin/pint",
+        "test": "vendor/bin/pest",
+        "type-coverage": [
+            "php -d memory_limit=-1 ./vendor/bin/pest --type-coverage --min=100"
+        ],
+        "rector": [
+            "vendor/bin/rector process"
+        ],
+        "rector-dry": [
+            "vendor/bin/rector process --dry-run"
+        ],
+        "pre-commit": [
+            "Composer\\Config::disableProcessTimeout",
+            "composer run rector-dry",
+            "composer run pint",
+            "composer run stan",
+            "composer run type-coverage",
+            "composer run test"
+        ]
     },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/"
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Jpeters8889\\JourneyTrackerLaravel\\JourneyTrackerServiceProvider"
+            ],
+            "aliases": {
+                "JourneyTracker": "Jpeters8889\\JourneyTrackerLaravel\\Facades\\JourneyTracker"
+            }
         }
     },
     "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
-    }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

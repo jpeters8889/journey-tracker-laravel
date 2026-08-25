@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Jpeters8889\JourneyTrackerLaravel\Query\PageFilter;
 
 it('returns an empty array when no fields are set', function (): void {
-    expect((new PageFilter())->toArray())->toBe([]);
+    expect((new PageFilter())->toArray())->toBeEmpty();
 });
 
 it('emits id when set', function (): void {

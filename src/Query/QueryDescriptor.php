@@ -14,7 +14,9 @@ class QueryDescriptor
     /** @var list<PageFilter> */
     private array $pageFilters = [];
 
-    public function __construct(public readonly string $alias) {}
+    public function __construct(public readonly string $alias)
+    {
+    }
 
     public function addEventFilter(EventFilter $filter): void
     {
@@ -51,14 +53,14 @@ class QueryDescriptor
 
         if ($this->eventFilters !== []) {
             $has['events'] = array_map(
-                fn(EventFilter $filter): array => $filter->toArray(),
+                fn (EventFilter $filter): array => $filter->toArray(),
                 $this->eventFilters,
             );
         }
 
         if ($this->pageFilters !== []) {
             $has['pages'] = array_map(
-                fn(PageFilter $filter): array => $filter->toArray(),
+                fn (PageFilter $filter): array => $filter->toArray(),
                 $this->pageFilters,
             );
         }
