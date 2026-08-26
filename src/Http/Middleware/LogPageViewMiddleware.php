@@ -21,7 +21,7 @@ class LogPageViewMiddleware
     }
 
     /**
-     * @deprecated Use JourneyTracker::token(), or the JourneyTracker facade. Removed in 1.1.
+     * @deprecated Use JourneyTracker::token(), or the JourneyTracker facade.
      */
     public static function getToken(): ?string
     {

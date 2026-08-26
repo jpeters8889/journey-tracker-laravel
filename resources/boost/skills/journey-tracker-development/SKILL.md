@@ -118,11 +118,40 @@ Inertia::share('journey.token', fn (): ?string => JourneyTracker::token());
 | `token` | string | Required. From `JourneyTracker::token()` |
 | `event_type` | string | Required. One of `scrolled_into_view`, `typed`, `clicked`, `other` |
 | `event_identifier` | string | Required. Your name for the thing, e.g. `BlogDetailCard` |
-| `data` | object | Optional. Arbitrary parameters, queryable later |
-| `sensitive` | bool | Optional. Marks the payload as sensitive |
+| `data` | object | Optional. Arbitrary parameters. Queryable later, unless `sensitive` is true |
+| `sensitive` | bool | Optional. Encrypts `data` at rest and locks it down — see below |
 
 The session and path are taken from the decrypted token, never from the request, so a client cannot
 attribute events to another journey.
+
+### The `title` key
+
+`title` is the one conventional key in `data`. When present, the UI displays it on the event
+occurrence, so a list of events reads as the things they happened to rather than a wall of repeated
+identifiers. Pass whatever names the record:
+
+```ts
+useJourneyTracking().logEvent('scrolled_into_view', 'BlogDetailCard', {
+  title: blog.title,
+});
+```
+
+Prefer it over inventing your own naming key such as `name` or `label` — `title` is the only one the
+UI renders.
+
+### Marking an event sensitive
+
+`sensitive: true` is not a label, it changes how the payload is handled:
+
+- `data` is **encrypted at rest**.
+- It is **not queryable** — sensitive events cannot be filtered by their parameters, so
+  `withParameters()` will not match them.
+- Viewing it in the UI requires **password confirmation**.
+
+Use it for anything you would not want sitting in plain text or appearing in an ordinary query —
+what someone typed into a field, for instance. The trade-off is real and one-way: anything marked
+sensitive is permanently outside your metrics. If you need to count it, do not mark it sensitive;
+send a separate non-sensitive event carrying only the parts that are safe to aggregate.
 
 ### Worked example — Inertia + Vue
 
@@ -237,7 +266,9 @@ collect($metrics->all())->each(function (array $row): void {
 
 `EventFilter` supports `type()` (an `EventType` or its string value), `identifier()`, and
 `withParameters()` for matching against the `data` you sent. `withParameters()` replaces rather than
-merges, so pass the whole array at once.
+merges, so pass the whole array at once. Events sent with `sensitive: true` have encrypted data and
+**will never match** `withParameters()` — a count that comes back as zero when you expected results
+is usually this.
 
 Filters can also be chained straight onto the builder, in which case they attach to the **most
 recent** `count()`. Prefer the closure form above — it makes the association explicit and cannot be
