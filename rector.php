@@ -25,7 +25,7 @@ return RectorConfig::configure()
         Rector\Set\ValueObject\SetList::PRIVATIZATION,
         Rector\Set\ValueObject\SetList::EARLY_RETURN,
         Rector\Set\ValueObject\SetList::INSTANCEOF,
-        Rector\Set\ValueObject\LevelSetList::UP_TO_PHP_83,
+        Rector\Set\ValueObject\LevelSetList::UP_TO_PHP_84,
 
         LaravelSetList::LARAVEL_COLLECTION,
         LaravelSetList::LARAVEL_CONTAINER_STRING_TO_FULLY_QUALIFIED_NAME,

@@ -50,5 +50,5 @@ it('blows up when an alias is read off a daily response', function (): void {
 it('still exposes daily rows through all()', function (): void {
     $rows = [['date' => '2024-01-01', 'signups' => 5]];
 
-    expect((new QueryResponse($rows))->all())->toBe($rows);
+    expect(new QueryResponse($rows)->all())->toBe($rows);
 });

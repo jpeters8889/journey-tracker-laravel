@@ -14,7 +14,7 @@ it('serialises to the wire shape the api expects', function (): void {
 });
 
 it('passes the tag through verbatim', function (string $tag): void {
-    expect((new QueuedTagData('session-abc', $tag))->toArray()['tag'])->toBe($tag);
+    expect(new QueuedTagData('session-abc', $tag)->toArray()['tag'])->toBe($tag);
 })->with([
     'Shop Purchase',
     'trial-started',

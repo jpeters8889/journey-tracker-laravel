@@ -21,7 +21,7 @@ it('does not include events in has when no filters are added', function (): void
 
 it('includes events in has when a filter is added', function (): void {
     $descriptor = new QueryDescriptor('clicks');
-    $descriptor->addEventFilter((new EventFilter())->type(EventType::CLICKED));
+    $descriptor->addEventFilter(new EventFilter()->type(EventType::CLICKED));
 
     expect($descriptor->toArray()['has'])->toHaveKey('events')
         ->and($descriptor->toArray()['has']['events'])->toHaveCount(1);
@@ -29,8 +29,8 @@ it('includes events in has when a filter is added', function (): void {
 
 it('maps multiple filters into the events array', function (): void {
     $descriptor = new QueryDescriptor('funnel');
-    $descriptor->addEventFilter((new EventFilter())->type(EventType::CLICKED)->identifier('start'));
-    $descriptor->addEventFilter((new EventFilter())->type(EventType::CLICKED)->identifier('end'));
+    $descriptor->addEventFilter(new EventFilter()->type(EventType::CLICKED)->identifier('start'));
+    $descriptor->addEventFilter(new EventFilter()->type(EventType::CLICKED)->identifier('end'));
 
     $events = $descriptor->toArray()['has']['events'];
 
@@ -40,7 +40,7 @@ it('maps multiple filters into the events array', function (): void {
 });
 
 it('uses the alias in the as key', function (): void {
-    expect((new QueryDescriptor('my_alias'))->toArray()['as'])->toBe('my_alias');
+    expect(new QueryDescriptor('my_alias')->toArray()['as'])->toBe('my_alias');
 });
 
 it('does not include pages in has when no page filters are added', function (): void {
@@ -51,7 +51,7 @@ it('does not include pages in has when no page filters are added', function (): 
 
 it('includes pages in has when a page filter is added', function (): void {
     $descriptor = new QueryDescriptor('home_events');
-    $descriptor->addPageFilter((new PageFilter())->path('/home'));
+    $descriptor->addPageFilter(new PageFilter()->path('/home'));
 
     expect($descriptor->toArray()['has'])->toHaveKey('pages')
         ->and($descriptor->toArray()['has']['pages'])->toHaveCount(1);
@@ -59,8 +59,8 @@ it('includes pages in has when a page filter is added', function (): void {
 
 it('maps multiple page filters into the pages array', function (): void {
     $descriptor = new QueryDescriptor('funnel');
-    $descriptor->addPageFilter((new PageFilter())->path('/start'));
-    $descriptor->addPageFilter((new PageFilter())->path('/end'));
+    $descriptor->addPageFilter(new PageFilter()->path('/start'));
+    $descriptor->addPageFilter(new PageFilter()->path('/end'));
 
     $pages = $descriptor->toArray()['has']['pages'];
 
@@ -70,14 +70,14 @@ it('maps multiple page filters into the pages array', function (): void {
 });
 
 it('adds an event filter via the fluent withEvent() method', function (): void {
-    $descriptor = (new QueryDescriptor('clicks'))
+    $descriptor = new QueryDescriptor('clicks')
         ->withEvent(fn (EventFilter $f): EventFilter => $f->type(EventType::CLICKED));
 
     expect($descriptor->toArray()['has']['events'][0])->toBe(['type' => 'clicked']);
 });
 
 it('adds a page filter via the fluent withPage() method', function (): void {
-    $descriptor = (new QueryDescriptor('home'))
+    $descriptor = new QueryDescriptor('home')
         ->withPage(fn (PageFilter $f): PageFilter => $f->path('/home'));
 
     expect($descriptor->toArray()['has']['pages'][0])->toBe(['path' => '/home']);

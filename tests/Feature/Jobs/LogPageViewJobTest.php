@@ -10,7 +10,7 @@ use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
 it('posts the page view payload to the api', function (): void {
     fakePageViewEndpoint();
 
-    (new LogPageViewJob(queuedPageViewData()))->handle();
+    new LogPageViewJob(queuedPageViewData())->handle();
 
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/page-view')
         && $request->method() === 'POST'
@@ -27,11 +27,11 @@ it('posts the page view payload to the api', function (): void {
 it('does not throw when the api is unreachable', function (): void {
     Http::fake(fn () => throw new ConnectionException('offline'));
 
-    (new LogPageViewJob(queuedPageViewData()))->handle();
+    new LogPageViewJob(queuedPageViewData())->handle();
 })->throwsNoExceptions();
 
 it('does not throw when the api returns a server error', function (): void {
     Http::fake(['*' => Http::response('boom', 500)]);
 
-    (new LogPageViewJob(queuedPageViewData()))->handle();
+    new LogPageViewJob(queuedPageViewData())->handle();
 })->throwsNoExceptions();
