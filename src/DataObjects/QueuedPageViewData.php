@@ -10,6 +10,7 @@ final readonly class QueuedPageViewData
         public string $sessionId,
         public string $path,
         public ?string $route,
+        public ?string $routePath,
         public int $timestamp,
         public ?string $userAgent = null,
     ) {
@@ -22,6 +23,7 @@ final readonly class QueuedPageViewData
             'session_id' => $this->sessionId,
             'path' => $this->path,
             'route' => $this->route,
+            'route_path' => $this->routePath,
             'timestamp' => $this->timestamp,
             'user_agent' => $this->userAgent,
         ];

@@ -23,6 +23,7 @@ it('logs a page view carrying the full payload', function (): void {
 
         return $data['path'] === 'blog/my-post'
             && $data['route'] === 'blog.show'
+            && $data['route_path'] === 'blog/my-post'
             && $data['user_agent'] === 'JourneyBot/1.0'
             && is_string($data['session_id'])
             && $data['session_id'] !== ''
@@ -30,14 +31,26 @@ it('logs a page view carrying the full payload', function (): void {
     });
 });
 
-it('sends a null route for an unnamed route', function (): void {
+it('sends a null route but still sends the route path for an unnamed route', function (): void {
     fakePageViewEndpoint();
 
     trackedRoute('/blog', fn (): string => 'ok');
 
     $this->get('/blog');
 
-    Http::assertSent(fn (Request $request): bool => $request->data()['route'] === null);
+    Http::assertSent(fn (Request $request): bool => $request->data()['route'] === null
+        && $request->data()['route_path'] === 'blog');
+});
+
+it('sends the route pattern as the route path, not the path that was visited', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog/{post}', fn (): string => 'ok');
+
+    $this->get('/blog/my-post');
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['path'] === 'blog/my-post'
+        && $request->data()['route_path'] === 'blog/{post}');
 });
 
 it('stamps the page view with the current time', function (): void {

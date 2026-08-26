@@ -88,12 +88,13 @@ it('falls back to the token path when the supplied path is just a slash', functi
     Http::assertSent(fn (Request $request): bool => $request->data()['path'] === 'blog/my-post');
 });
 
-it('records a heartbeat with a null route, because no route is resolved for one', function (): void {
+it('records a heartbeat with a null route and route path, because no route is resolved for one', function (): void {
     fakePageViewEndpoint();
 
     $this->postJson(heartbeatUrl(), ['token' => journeyToken()])->assertNoContent();
 
-    Http::assertSent(fn (Request $request): bool => $request->data()['route'] === null);
+    Http::assertSent(fn (Request $request): bool => $request->data()['route'] === null
+        && $request->data()['route_path'] === null);
 });
 
 it('passes the user agent of the heartbeat request through', function (): void {

@@ -18,6 +18,7 @@ it('posts the page view payload to the api', function (): void {
             'session_id' => 'session-abc',
             'path' => 'blog/my-post',
             'route' => 'blog.show',
+            'route_path' => 'blog/{post}',
             'timestamp' => 1787577135,
             'user_agent' => 'JourneyBot/1.0',
         ]);

@@ -29,6 +29,7 @@ class HeartbeatRequest extends FormRequest
             sessionId: $token['session_id'],
             path: $this->trackedPath($token['path']),
             route: null,
+            routePath: null,
             timestamp: time(),
             userAgent: $this->userAgent(),
         );

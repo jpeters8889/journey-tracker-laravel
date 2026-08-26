@@ -99,10 +99,11 @@ function queuedPageViewData(
     string $sessionId = 'session-abc',
     string $path = 'blog/my-post',
     ?string $route = 'blog.show',
+    ?string $routePath = 'blog/{post}',
     int $timestamp = 1787577135,
     ?string $userAgent = 'JourneyBot/1.0',
 ): QueuedPageViewData {
-    return new QueuedPageViewData($sessionId, $path, $route, $timestamp, $userAgent);
+    return new QueuedPageViewData($sessionId, $path, $route, $routePath, $timestamp, $userAgent);
 }
 
 /** @param array<string, mixed> $data */
