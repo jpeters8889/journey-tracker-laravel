@@ -47,6 +47,9 @@
         "type-coverage": [
             "php -d memory_limit=-1 ./vendor/bin/pest --type-coverage --min=100"
         ],
+        "coverage": [
+            "php -d memory_limit=-1 ./vendor/bin/pest --coverage --min=100"
+        ],
         "rector": [
             "vendor/bin/rector process"
         ],
