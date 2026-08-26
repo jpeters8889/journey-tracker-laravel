@@ -19,6 +19,14 @@ class JourneyTrackerServiceProvider extends PackageServiceProvider
             ->hasRoute('api');
     }
 
+    public function packageRegistered(): void
+    {
+        $this->mergeConfigFrom(
+            __DIR__ . '/../config/journey-tracker-laravel-internal.php',
+            'journey-tracker-laravel',
+        );
+    }
+
     public function boot(): void
     {
         parent::boot();
@@ -29,7 +37,7 @@ class JourneyTrackerServiceProvider extends PackageServiceProvider
 
         Http::macro(
             'journeyTracker',
-            fn (): PendingRequest => Http::baseUrl(config('journey-tracker-laravel.host'))
+            fn (): PendingRequest => Http::baseUrl(config()->string('journey-tracker-laravel.host', 'https://journey-tracker.cloud'))
                 ->withToken(config('journey-tracker-laravel.app-token'))
                 ->when(
                     config()->boolean('journey-tracker-laravel.verify-tls', true) === false,

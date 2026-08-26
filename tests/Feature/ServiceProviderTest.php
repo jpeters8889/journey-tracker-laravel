@@ -23,6 +23,38 @@ it('publishes the config file under the package tag', function (): void {
         ->and(array_values($paths)[0])->toEndWith('journey-tracker-laravel.php');
 });
 
+it('keeps the internal keys out of the published config file', function (): void {
+    $paths = ServiceProvider::pathsToPublish(
+        JourneyTrackerServiceProvider::class,
+        'journey-tracker-laravel-config',
+    );
+
+    $published = require array_key_first($paths);
+
+    expect($published)->not->toHaveKey('host')
+        ->and($published)->not->toHaveKey('verify-tls')
+        ->and($published)->toHaveKeys(['enabled', 'app-token', 'dont-track', 'queue']);
+});
+
+it('still resolves the internal keys at runtime', function (): void {
+    expect(config('journey-tracker-laravel.host'))->toBe('https://journey-tracker.cloud')
+        ->and(config('journey-tracker-laravel.verify-tls'))->toBeTrue();
+});
+
+it('falls back to the cloud host when the host key is missing entirely', function (): void {
+    $config = config()->array('journey-tracker-laravel');
+
+    unset($config['host']);
+
+    config(['journey-tracker-laravel' => $config]);
+
+    Http::fake();
+
+    Http::journeyTracker()->post('/api/tag', []);
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://journey-tracker.cloud/api/tag');
+});
+
 it('sends api calls to the configured host', function (): void {
     config(['journey-tracker-laravel.host' => 'https://analytics.example.test']);
 

@@ -15,9 +15,5 @@ return [
 
     'heartbeat-endpoint' => 'journey-tracker-api/heartbeat',
 
-    'host' => env('JOURNEY_TRACKER_HOST', 'https://journey-tracker.cloud'),
-
     'queue' => env('JOURNEY_TRACKER_QUEUE'),
-
-    'verify-tls' => env('JOURNEY_TRACKER_VERIFY_TLS', true),
 ];

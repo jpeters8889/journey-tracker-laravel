@@ -48,7 +48,6 @@ re-requesting. Without it those views are lost silently.
 | --- | --- | --- | --- |
 | `enabled` | `JOURNEY_TRACKER_ENABLED` | `true` | Master switch. When false, nothing is recorded at all |
 | `app-token` | `JOURNEY_TRACKER_TOKEN` | `null` | Authenticates against the API |
-| `host` | `JOURNEY_TRACKER_HOST` | `https://journey-tracker.cloud` | API base URL |
 | `queue` | `JOURNEY_TRACKER_QUEUE` | `null` | Queue name for the ingest jobs |
 | `dont-track` | — | `[]` | Patterns excluded from tracking |
 | `internal-event-endpoint` | — | `journey-tracker-api/event` | Route the package registers in your app |
