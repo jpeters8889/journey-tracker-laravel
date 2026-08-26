@@ -6,6 +6,7 @@ namespace Jpeters8889\JourneyTrackerLaravel\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
 use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
 use Jpeters8889\JourneyTrackerLaravel\JourneyTracker;
@@ -28,6 +29,9 @@ class LogPageViewMiddleware
         return app(JourneyTracker::class)->token();
     }
 
+    /**
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): mixed
     {
         if ($this->trackingPolicy->shouldTrackRequest($request)) {
@@ -49,7 +53,7 @@ class LogPageViewMiddleware
             $request->route()?->uri(),
             time(),
             $request->userAgent(),
-        ))->onQueue(config('journey-tracker-laravel.queue'));
+        ))->onQueue($this->journeyTracker->queue());
 
         $token = $this->journeyTracker->token();
 

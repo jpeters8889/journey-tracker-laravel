@@ -63,12 +63,22 @@ class JourneyTracker
         AssignTagJob::dispatch(new QueuedTagData(
             $this->sessionId() ?? $this->request->session()->getId(),
             $tag,
-        ))->onQueue(config('journey-tracker-laravel.queue'));
+        ))->onQueue($this->queue());
     }
 
     public function query(): QueryBuilder
     {
         return new QueryBuilder();
+    }
+
+    /**
+     * @internal
+     */
+    public function queue(): ?string
+    {
+        $queue = config('journey-tracker-laravel.queue');
+
+        return is_string($queue) ? $queue : null;
     }
 
     public function heartbeatScript(): string
@@ -79,7 +89,7 @@ class JourneyTracker
             return '';
         }
 
-        $endpoint = '/' . config('journey-tracker-laravel.heartbeat-endpoint');
+        $endpoint = '/' . config()->string('journey-tracker-laravel.heartbeat-endpoint', 'journey-tracker-api/heartbeat');
 
         $script = <<<JS
             (function(){var t='{$token}',u='{$endpoint}',h=false;

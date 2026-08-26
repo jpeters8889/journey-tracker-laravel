@@ -8,6 +8,9 @@ use Jpeters8889\JourneyTrackerLaravel\Enums\EventType;
 
 final readonly class QueuedEventData
 {
+    /**
+     * @param  array<array-key, mixed>  $data
+     */
     public function __construct(
         public string $sessionId,
         public string $path,
@@ -20,6 +23,7 @@ final readonly class QueuedEventData
         //
     }
 
+    /** @return array<string, mixed> */
     public function toArray(): array
     {
         return [

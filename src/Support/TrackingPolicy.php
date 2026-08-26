@@ -72,7 +72,7 @@ class TrackingPolicy
     {
         return array_values(array_map(
             fn (string $pattern): string => ltrim($pattern, '/'),
-            config()->array('journey-tracker-laravel.dont-track', []),
+            array_filter(config()->array('journey-tracker-laravel.dont-track', []), is_string(...)),
         ));
     }
 }

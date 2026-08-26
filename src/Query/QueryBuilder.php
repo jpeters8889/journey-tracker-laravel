@@ -7,6 +7,7 @@ namespace Jpeters8889\JourneyTrackerLaravel\Query;
 use Closure;
 use Illuminate\Support\Facades\Http;
 use DateTimeInterface;
+use LogicException;
 
 class QueryBuilder
 {
@@ -70,7 +71,7 @@ class QueryBuilder
         $eventFilter = new EventFilter();
         $filter($eventFilter);
 
-        $this->descriptors[array_key_last($this->descriptors)]->addEventFilter($eventFilter);
+        $this->lastDescriptor()->addEventFilter($eventFilter);
 
         return $this;
     }
@@ -80,14 +81,14 @@ class QueryBuilder
         $pageFilter = new PageFilter();
         $filter($pageFilter);
 
-        $this->descriptors[array_key_last($this->descriptors)]->addPageFilter($pageFilter);
+        $this->lastDescriptor()->addPageFilter($pageFilter);
 
         return $this;
     }
 
     public function get(): QueryResponse
     {
-        /** @var array<string, int|list<array{date: string, count: int}>> $data */
+        /** @var array<string, int>|list<array<string, mixed>> $data */
         $data = Http::journeyTracker()->post('/api/query', $this->buildPayload())->json('data');
 
         return new QueryResponse($data);
@@ -96,10 +97,19 @@ class QueryBuilder
     /** @param array<string, mixed> $payload */
     public function raw(array $payload): QueryResponse
     {
-        /** @var array<string, int|list<array{date: string, count: int}>> $data */
+        /** @var array<string, int>|list<array<string, mixed>> $data */
         $data = Http::journeyTracker()->post('/api/query', $payload)->json('data');
 
         return new QueryResponse($data);
+    }
+
+    private function lastDescriptor(): QueryDescriptor
+    {
+        $key = array_key_last($this->descriptors);
+
+        throw_if($key === null, new LogicException('Add a count() to the query before filtering it with withEvent() or withPage().'));
+
+        return $this->descriptors[$key];
     }
 
     /** @return array<string, mixed> */

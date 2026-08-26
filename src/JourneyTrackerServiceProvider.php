@@ -35,15 +35,20 @@ class JourneyTrackerServiceProvider extends PackageServiceProvider
 
         Blade::directive('journeyTracker', fn (): string => "<?php echo app('journey-tracker')->heartbeatScript(); ?>");
 
-        Http::macro(
-            'journeyTracker',
-            fn (): PendingRequest => Http::baseUrl(config()->string('journey-tracker-laravel.host', 'https://journey-tracker.cloud'))
-                ->withToken(config('journey-tracker-laravel.app-token'))
-                ->when(
-                    config()->boolean('journey-tracker-laravel.verify-tls', true) === false,
-                    fn (PendingRequest $request): PendingRequest => $request->withoutVerifying(),
-                )
-                ->acceptJson()
-        );
+        Http::macro('journeyTracker', function (): PendingRequest {
+            $token = config('journey-tracker-laravel.app-token');
+
+            $request = Http::baseUrl(config()->string('journey-tracker-laravel.host', 'https://journey-tracker.cloud'));
+
+            if (is_string($token)) {
+                $request = $request->withToken($token);
+            }
+
+            if (config()->boolean('journey-tracker-laravel.verify-tls', true) === false) {
+                $request = $request->withoutVerifying();
+            }
+
+            return $request->acceptJson();
+        });
     }
 }

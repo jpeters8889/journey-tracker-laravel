@@ -115,6 +115,20 @@ it('points the heartbeat script at the configured endpoint', function (): void {
     expect($this->get('/blog')->getContent())->toContain("u='/custom/beat'");
 });
 
+it('falls back to the packaged heartbeat endpoint when the published config predates the key', function (): void {
+    $config = config()->array('journey-tracker-laravel');
+
+    unset($config['heartbeat-endpoint']);
+
+    config(['journey-tracker-laravel' => $config]);
+
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->heartbeatScript());
+
+    expect($this->get('/blog')->getContent())->toContain("u='/journey-tracker-api/heartbeat'");
+});
+
 it('wraps the heartbeat script in a script tag', function (): void {
     fakePageViewEndpoint();
 

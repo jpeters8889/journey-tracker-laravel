@@ -15,7 +15,7 @@ use Jpeters8889\JourneyTrackerLaravel\Query\QueryResponse;
 it('sends type count in every payload', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->count('metric')->get();
+    new QueryBuilder()->count('metric')->get();
 
     Http::assertSent(fn (Request $request): bool => $request->data()['type'] === 'count');
 });
@@ -23,7 +23,7 @@ it('sends type count in every payload', function (): void {
 it('sends the today keyword for both from and to when today() is called', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->today()->count('metric')->get();
+    new QueryBuilder()->today()->count('metric')->get();
 
     Http::assertSent(
         fn (Request $request): bool =>
@@ -38,7 +38,7 @@ it("does not resolve today against this application's timezone", function (strin
 
     fakeQueryResponse();
 
-    (new QueryBuilder())->today()->count('metric')->get();
+    new QueryBuilder()->today()->count('metric')->get();
 
     Http::assertSent(fn (Request $request): bool => $request->data()['from'] === 'today');
 })->with(['UTC', 'Europe/London', 'America/Los_Angeles', 'Pacific/Chatham']);
@@ -46,7 +46,7 @@ it("does not resolve today against this application's timezone", function (strin
 it('still sends an explicit date when one is passed to today()', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->today('2026-08-24')->count('metric')->get();
+    new QueryBuilder()->today('2026-08-24')->count('metric')->get();
 
     Http::assertSent(
         fn (Request $request): bool =>
@@ -58,7 +58,7 @@ it('still sends an explicit date when one is passed to today()', function (): vo
 it('sends from and to when set via between()', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->between('2024-01-01', '2024-01-31')->count('metric')->get();
+    new QueryBuilder()->between('2024-01-01', '2024-01-31')->count('metric')->get();
 
     Http::assertSent(
         fn (Request $request): bool =>
@@ -70,7 +70,7 @@ it('sends from and to when set via between()', function (): void {
 it('normalises DateTimeInterface to Y-m-d when using between()', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->between(
+    new QueryBuilder()->between(
         new DateTime('2024-01-01'),
         new DateTime('2024-01-31'),
     )->count('metric')->get();
@@ -85,7 +85,7 @@ it('normalises DateTimeInterface to Y-m-d when using between()', function (): vo
 it('sends from and to when set individually', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->from('2024-01-01')->to('2024-01-31')->count('metric')->get();
+    new QueryBuilder()->from('2024-01-01')->to('2024-01-31')->count('metric')->get();
 
     Http::assertSent(
         fn (Request $request): bool =>
@@ -97,7 +97,7 @@ it('sends from and to when set individually', function (): void {
 it('normalises DateTimeInterface to Y-m-d when using from() and to()', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->from(new DateTime('2024-06-15'))
         ->to(new DateTime('2024-07-15'))
         ->count('metric')
@@ -113,7 +113,7 @@ it('normalises DateTimeInterface to Y-m-d when using from() and to()', function 
 it('sends interval daily when daily() is called', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->daily()->between('2024-01-01', '2024-01-07')->count('metric')->get();
+    new QueryBuilder()->daily()->between('2024-01-01', '2024-01-07')->count('metric')->get();
 
     Http::assertSent(fn (Request $request): bool => $request->data()['interval'] === 'daily');
 });
@@ -121,7 +121,7 @@ it('sends interval daily when daily() is called', function (): void {
 it('omits interval key when daily() is not called', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->count('metric')->get();
+    new QueryBuilder()->count('metric')->get();
 
     Http::assertSent(fn (Request $request): bool => ! array_key_exists('interval', $request->data()));
 });
@@ -129,7 +129,7 @@ it('omits interval key when daily() is not called', function (): void {
 it('omits from and to keys when not set', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->count('metric')->get();
+    new QueryBuilder()->count('metric')->get();
 
     Http::assertSent(
         fn (Request $request): bool =>
@@ -141,7 +141,7 @@ it('omits from and to keys when not set', function (): void {
 it('sends multiple descriptors when count() is called multiple times', function (): void {
     fakeQueryResponse(['clicks' => 10, 'signups' => 5]);
 
-    (new QueryBuilder())->count('clicks')->count('signups')->get();
+    new QueryBuilder()->count('clicks')->count('signups')->get();
 
     Http::assertSent(fn (Request $request): bool => count($request->data()['data']) === 2);
 });
@@ -149,7 +149,7 @@ it('sends multiple descriptors when count() is called multiple times', function 
 it('sends has.events on the correct descriptor when withEvent() is called', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->count('clicks')
         ->withEvent(fn (EventFilter $f): EventFilter => $f->type(EventType::CLICKED)->identifier('btn'))
         ->get();
@@ -165,7 +165,7 @@ it('sends has.events on the correct descriptor when withEvent() is called', func
 it('applies withEvent() to the last count() descriptor only', function (): void {
     fakeQueryResponse(['first' => 1, 'second' => 2]);
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->count('first')
         ->count('second')
         ->withEvent(fn (EventFilter $f): EventFilter => $f->type(EventType::CLICKED))
@@ -182,7 +182,7 @@ it('applies withEvent() to the last count() descriptor only', function (): void 
 it('produces two event items when withEvent() is called twice on the same count', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->count('funnel')
         ->withEvent(fn (EventFilter $f): EventFilter => $f->type(EventType::CLICKED)->identifier('start'))
         ->withEvent(fn (EventFilter $f): EventFilter => $f->type(EventType::CLICKED)->identifier('end'))
@@ -197,7 +197,7 @@ it('produces two event items when withEvent() is called twice on the same count'
 it('sends has as empty array when no withEvent() calls are made', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->count('all_events')->get();
+    new QueryBuilder()->count('all_events')->get();
 
     Http::assertSent(
         fn (Request $request): bool =>
@@ -209,7 +209,7 @@ it('sends has as empty array when no withEvent() calls are made', function (): v
 it('returns a QueryResponse instance from get()', function (): void {
     fakeQueryResponse(['signups' => 42]);
 
-    $response = (new QueryBuilder())->count('signups')->get();
+    $response = new QueryBuilder()->count('signups')->get();
 
     expect($response)->toBeInstanceOf(QueryResponse::class)
         ->and($response->get('signups'))->toBe(42);
@@ -218,7 +218,7 @@ it('returns a QueryResponse instance from get()', function (): void {
 it('configures the descriptor via closure when count() receives one', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->count(
             'clicks',
             fn (QueryDescriptor $d): QueryDescriptor => $d
@@ -237,7 +237,7 @@ it('configures the descriptor via closure when count() receives one', function (
 it('configures page and event filters via closure in the same count()', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->count(
             'home_clicks',
             fn (QueryDescriptor $d): QueryDescriptor => $d
@@ -259,7 +259,7 @@ it('configures page and event filters via closure in the same count()', function
 it('handles multiple count() calls each with their own closure', function (): void {
     fakeQueryResponse(['page_views' => 10, 'shares' => 3]);
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->count(
             'page_views',
             fn (QueryDescriptor $d): QueryDescriptor => $d
@@ -287,7 +287,7 @@ it('handles multiple count() calls each with their own closure', function (): vo
 it('sends has.pages on the correct descriptor when withPage() is called', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->count('home_events')
         ->withPage(fn (PageFilter $f): PageFilter => $f->path('/home'))
         ->get();
@@ -303,7 +303,7 @@ it('sends has.pages on the correct descriptor when withPage() is called', functi
 it('applies withPage() to the last count() descriptor only', function (): void {
     fakeQueryResponse(['first' => 1, 'second' => 2]);
 
-    (new QueryBuilder())
+    new QueryBuilder()
         ->count('first')
         ->count('second')
         ->withPage(fn (PageFilter $f): PageFilter => $f->path('/home'))
@@ -325,7 +325,7 @@ it('sends the raw payload verbatim and returns a QueryResponse', function (): vo
         'data' => [['as' => 'my_metric', 'has' => []]],
     ];
 
-    $response = (new QueryBuilder())->raw($payload);
+    $response = new QueryBuilder()->raw($payload);
 
     Http::assertSent(fn (Request $request): bool => $request->data() === $payload);
     expect($response)->toBeInstanceOf(QueryResponse::class)
@@ -371,7 +371,7 @@ it('does not leak descriptors between two builders', function (): void {
 it('sends to without from when only to() is called', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->to('2024-01-31')->count('metric')->get();
+    new QueryBuilder()->to('2024-01-31')->count('metric')->get();
 
     Http::assertSent(
         fn (Request $request): bool => $request->data()['to'] === '2024-01-31'
@@ -382,7 +382,7 @@ it('sends to without from when only to() is called', function (): void {
 it('sends from without to when only from() is called', function (): void {
     fakeQueryResponse();
 
-    (new QueryBuilder())->from('2024-01-01')->count('metric')->get();
+    new QueryBuilder()->from('2024-01-01')->count('metric')->get();
 
     Http::assertSent(
         fn (Request $request): bool => $request->data()['from'] === '2024-01-01'
@@ -398,7 +398,7 @@ it('returns the daily rows verbatim from a raw() call', function (): void {
 
     fakeQueryResponse($rows);
 
-    $response = (new QueryBuilder())->raw(['type' => 'count', 'interval' => 'daily']);
+    $response = new QueryBuilder()->raw(['type' => 'count', 'interval' => 'daily']);
 
     expect($response->all())->toBe($rows);
 });
@@ -408,7 +408,7 @@ it('returns daily rows from get() when daily() is used', function (): void {
 
     fakeQueryResponse($rows);
 
-    $response = (new QueryBuilder())->daily()->count('metric')->get();
+    $response = new QueryBuilder()->daily()->count('metric')->get();
 
     expect($response->all())->toBe($rows);
 });
@@ -417,5 +417,5 @@ it('blows up when a filter is added before any count', function (string $method)
     $builder = new QueryBuilder();
 
     expect(fn (): QueryBuilder => $builder->{$method}(fn (object $filter): object => $filter))
-        ->toThrow(ErrorException::class);
+        ->toThrow(LogicException::class, 'Add a count() to the query before filtering it with withEvent() or withPage().');
 })->with(['withEvent', 'withPage']);

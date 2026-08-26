@@ -71,6 +71,12 @@ it('authenticates api calls with the configured app token', function (): void {
     expect(Http::journeyTracker()->getOptions()['headers']['Authorization'])->toBe('Bearer super-secret-token');
 });
 
+it('sends no authorization header when no app token is configured', function (): void {
+    config(['journey-tracker-laravel.app-token' => null]);
+
+    expect(Http::journeyTracker()->getOptions()['headers'])->not->toHaveKey('Authorization');
+});
+
 it('asks for json back', function (): void {
     expect(Http::journeyTracker()->getOptions()['headers']['Accept'])->toBe('application/json');
 });

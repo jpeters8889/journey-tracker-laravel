@@ -33,7 +33,7 @@ class EventStoreRequest extends FormRequest
         return new QueuedEventData(
             sessionId: $token['session_id'],
             path: $token['path'],
-            eventType: $this->enum('event_type', EventType::class),
+            eventType: EventType::from($this->string('event_type')->toString()),
             eventIdentifier: $this->string('event_identifier')->toString(),
             data: $this->array('data'),
             sensitive: $this->boolean('sensitive'),

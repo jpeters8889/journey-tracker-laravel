@@ -62,6 +62,18 @@ it('leaves the queue unset when none is configured', function (): void {
     Queue::assertPushed(LogPageViewJob::class, fn (LogPageViewJob $job): bool => $job->queue === null);
 });
 
+it('leaves the queue unset when the configured queue name is not a string', function (): void {
+    config(['journey-tracker-laravel.queue' => ['analytics']]);
+
+    Queue::fake();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    $this->get('/blog');
+
+    Queue::assertPushed(LogPageViewJob::class, fn (LogPageViewJob $job): bool => $job->queue === null);
+});
+
 it('leaves the event queue unset when none is configured', function (): void {
     config(['journey-tracker-laravel.queue' => null]);
 

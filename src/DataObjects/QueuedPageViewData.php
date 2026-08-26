@@ -17,6 +17,7 @@ final readonly class QueuedPageViewData
         //
     }
 
+    /** @return array<string, mixed> */
     public function toArray(): array
     {
         return [

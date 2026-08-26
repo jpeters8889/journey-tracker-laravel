@@ -13,6 +13,7 @@ final readonly class QueuedTagData
         //
     }
 
+    /** @return array<string, mixed> */
     public function toArray(): array
     {
         return [
