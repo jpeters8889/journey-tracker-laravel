@@ -3,18 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Request;
-use Illuminate\Session\ArraySessionHandler;
-use Illuminate\Session\Store;
 use Jpeters8889\JourneyTrackerLaravel\Support\TrackingPolicy;
-
-function policyRequest(string $uri = '/blog', string $method = 'GET'): Request
-{
-    $request = Request::create($uri, $method);
-
-    $request->setLaravelSession(new Store('journey-tracker-test', new ArraySessionHandler(120)));
-
-    return $request;
-}
 
 it('tracks a plain GET request', function (): void {
     expect((new TrackingPolicy())->shouldTrackRequest(policyRequest()))->toBeTrue();
@@ -22,7 +11,7 @@ it('tracks a plain GET request', function (): void {
 
 it('rejects a request that is not a GET', function (string $method): void {
     expect((new TrackingPolicy())->shouldTrackRequest(policyRequest('/blog', $method)))->toBeFalse();
-})->with(['POST', 'PUT', 'PATCH', 'DELETE']);
+})->with(['POST', 'PUT', 'PATCH', 'DELETE', 'HEAD']);
 
 it('rejects a request with no session, rather than throwing', function (): void {
     expect((new TrackingPolicy())->shouldTrackRequest(Request::create('/blog')))->toBeFalse();
@@ -100,4 +89,39 @@ it('tracks everything when dont-track is empty', function (): void {
     config(['journey-tracker-laravel.dont-track' => []]);
 
     expect((new TrackingPolicy())->shouldTrackPath('literally/anything'))->toBeTrue();
+});
+
+it('tracks when the published config predates the enabled key', function (): void {
+    $published = config()->array('journey-tracker-laravel');
+
+    unset($published['enabled']);
+
+    config(['journey-tracker-laravel' => $published]);
+
+    expect((new TrackingPolicy())->shouldTrackPath('blog'))->toBeTrue();
+});
+
+it('tracks when the published config predates the dont-track key', function (): void {
+    $published = config()->array('journey-tracker-laravel');
+
+    unset($published['dont-track']);
+
+    config(['journey-tracker-laravel' => $published]);
+
+    expect((new TrackingPolicy())->shouldTrackPath('blog'))->toBeTrue();
+});
+
+it('honours a wildcard in the middle of a dont-track pattern', function (): void {
+    config(['journey-tracker-laravel.dont-track' => ['blog/*/edit']]);
+
+    expect((new TrackingPolicy())->shouldTrackPath('blog/my-post/edit'))->toBeFalse()
+        ->and((new TrackingPolicy())->shouldTrackPath('blog/my-post'))->toBeTrue();
+});
+
+it('does not treat a dont-track pattern as a partial match', function (): void {
+    config(['journey-tracker-laravel.dont-track' => ['admin']]);
+
+    expect((new TrackingPolicy())->shouldTrackPath('admin'))->toBeFalse()
+        ->and((new TrackingPolicy())->shouldTrackPath('administrators'))->toBeTrue()
+        ->and((new TrackingPolicy())->shouldTrackPath('admin/users'))->toBeTrue();
 });

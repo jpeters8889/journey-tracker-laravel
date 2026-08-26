@@ -32,3 +32,23 @@ it('returns daily breakdown via all() as date-keyed rows', function (): void {
 
     expect($response->all())->toBe($daily);
 });
+
+it('blows up when asked for an alias it does not carry', function (): void {
+    $response = new QueryResponse(['signups' => 42]);
+
+    expect(fn (): int => $response->get('typo'))->toThrow(ErrorException::class);
+});
+
+it('blows up when an alias is read off a daily response', function (): void {
+    $response = new QueryResponse([
+        ['date' => '2024-01-01', 'signups' => 5],
+    ]);
+
+    expect(fn (): int => $response->get('signups'))->toThrow(ErrorException::class);
+});
+
+it('still exposes daily rows through all()', function (): void {
+    $rows = [['date' => '2024-01-01', 'signups' => 5]];
+
+    expect((new QueryResponse($rows))->all())->toBe($rows);
+});
