@@ -7,13 +7,15 @@ namespace Jpeters8889\JourneyTrackerLaravel\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Crypt;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
+use Jpeters8889\JourneyTrackerLaravel\Rules\DecryptableToken;
 
 class HeartbeatRequest extends FormRequest
 {
-    public function rules(): array
+    /** @return array<string, list<mixed>> */
+    public function rules(DecryptableToken $decryptableToken): array
     {
         return [
-            'token' => ['required', 'string'],
+            'token' => ['required', 'string', $decryptableToken],
             'path' => ['sometimes', 'string'],
         ];
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Jpeters8889\JourneyTrackerLaravel;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Http;
 use Spatie\LaravelPackageTools\Package;
@@ -28,9 +29,12 @@ class JourneyTrackerServiceProvider extends PackageServiceProvider
 
         Http::macro(
             'journeyTracker',
-            fn () => Http::baseUrl(config('journey-tracker-laravel.host'))
+            fn (): PendingRequest => Http::baseUrl(config('journey-tracker-laravel.host'))
                 ->withToken(config('journey-tracker-laravel.app-token'))
-                ->withoutVerifying()
+                ->when(
+                    config()->boolean('journey-tracker-laravel.verify-tls', true) === false,
+                    fn (PendingRequest $request): PendingRequest => $request->withoutVerifying(),
+                )
                 ->acceptJson()
         );
     }

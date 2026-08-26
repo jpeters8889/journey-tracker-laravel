@@ -9,13 +9,15 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rule;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedEventData;
 use Jpeters8889\JourneyTrackerLaravel\Enums\EventType;
+use Jpeters8889\JourneyTrackerLaravel\Rules\DecryptableToken;
 
 class EventStoreRequest extends FormRequest
 {
-    public function rules(): array
+    /** @return array<string, list<mixed>> */
+    public function rules(DecryptableToken $decryptableToken): array
     {
         return [
-            'token' => ['required', 'string'],
+            'token' => ['required', 'string', $decryptableToken],
             'event_type' => ['required', Rule::enum(EventType::class)],
             'event_identifier' => ['required', 'string'],
             'data' => ['array'],

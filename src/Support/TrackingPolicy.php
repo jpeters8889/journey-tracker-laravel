@@ -36,7 +36,7 @@ class TrackingPolicy
 
     public function shouldTrackPath(string $path, ?string $routeName = null, ?string $routeUri = null): bool
     {
-        if (config()->boolean('journey-tracker-laravel.enabled') === false) {
+        if (config()->boolean('journey-tracker-laravel.enabled', true) === false) {
             return false;
         }
 
@@ -72,7 +72,7 @@ class TrackingPolicy
     {
         return array_values(array_map(
             fn (string $pattern): string => ltrim($pattern, '/'),
-            config()->array('journey-tracker-laravel.dont-track'),
+            config()->array('journey-tracker-laravel.dont-track', []),
         ));
     }
 }
