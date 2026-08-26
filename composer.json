@@ -2,10 +2,20 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "jpeters8889/journey-tracker-laravel",
     "type": "library",
+    "description": "Server-side Laravel SDK for journey-tracker.cloud: automatic page view tracking, custom events, journey tagging, and a fluent query builder for the data you collect.",
+    "keywords": [
+        "laravel",
+        "analytics",
+        "journey-tracker",
+        "page-views",
+        "tracking",
+        "sdk"
+    ],
+    "homepage": "https://journey-tracker.cloud",
     "license": "MIT",
     "require": {
-        "php": "^8.3",
-        "laravel/framework": "^12.0|^13.0",
+        "php": "^8.4",
+        "laravel/framework": "^12.61|^13.23",
         "spatie/laravel-package-tools": "^1.92"
     },
     "require-dev": {
@@ -29,6 +39,10 @@
         "psr-4": {
             "Tests\\": "tests/"
         }
+    },
+    "support": {
+        "issues": "https://github.com/jpeters8889/journey-tracker-laravel/issues",
+        "source": "https://github.com/jpeters8889/journey-tracker-laravel"
     },
     "authors": [
         {
