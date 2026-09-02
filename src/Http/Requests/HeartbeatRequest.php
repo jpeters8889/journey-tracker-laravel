@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Jpeters8889\JourneyTrackerLaravel\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Crypt;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
 use Jpeters8889\JourneyTrackerLaravel\Rules\DecryptableToken;
+use Jpeters8889\JourneyTrackerLaravel\Support\JourneyToken;
 
 class HeartbeatRequest extends FormRequest
 {
@@ -22,12 +22,11 @@ class HeartbeatRequest extends FormRequest
 
     public function toData(): QueuedPageViewData
     {
-        /** @var array{session_id: string, path: string} $token */
-        $token = Crypt::decrypt($this->string('token')->toString());
+        $token = JourneyToken::decrypt($this->string('token')->toString());
 
         return new QueuedPageViewData(
-            sessionId: $token['session_id'],
-            path: $this->trackedPath($token['path']),
+            visitId: $token->visitId,
+            path: $this->trackedPath($token->path),
             route: null,
             routePath: null,
             timestamp: time(),

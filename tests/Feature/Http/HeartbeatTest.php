@@ -13,7 +13,7 @@ it('logs a page view against the token path when no path is sent', function (): 
 
     Http::assertSent(
         fn (Request $request): bool => $request->data()['path'] === 'blog/my-post'
-            && $request->data()['session_id'] === 'session-abc'
+            && $request->data()['visit_id'] === 'session-abc'
     );
 });
 
@@ -43,11 +43,11 @@ it('keeps the session id from the token when the path is overridden', function (
     fakePageViewEndpoint();
 
     $this->postJson(heartbeatUrl(), [
-        'token' => journeyToken(sessionId: 'session-xyz'),
+        'token' => journeyToken(visitId: 'session-xyz'),
         'path' => '/somewhere-else',
     ])->assertNoContent();
 
-    Http::assertSent(fn (Request $request): bool => $request->data()['session_id'] === 'session-xyz');
+    Http::assertSent(fn (Request $request): bool => $request->data()['visit_id'] === 'session-xyz');
 });
 
 it('logs nothing when the supplied path is excluded by dont-track', function (): void {
@@ -142,4 +142,14 @@ it('rejects a path that is not a string', function (): void {
         'token' => journeyToken(),
         'path' => ['blog'],
     ])->assertJsonValidationErrorFor('path');
+});
+
+it('still logs a page view from a token minted before the visit id rename', function (): void {
+    fakePageViewEndpoint();
+
+    $this->postJson(heartbeatUrl(), ['token' => legacyJourneyToken(visitId: 'session-abc', path: 'blog/my-post')])
+        ->assertNoContent();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['visit_id'] === 'session-abc'
+        && $request->data()['path'] === 'blog/my-post');
 });

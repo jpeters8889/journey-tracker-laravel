@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Jpeters8889\JourneyTrackerLaravel\DataObjects;
 
-final readonly class QueuedTagData
+final readonly class QueuedConfirmationData
 {
-    public function __construct(
-        public string $visitId,
-        public string $tag,
-    ) {
+    public function __construct(public string $visitId)
+    {
         //
     }
 
@@ -17,8 +15,7 @@ final readonly class QueuedTagData
     public function toArray(): array
     {
         return [
-            'session_id' => $this->visitId,
-            'tag' => $this->tag,
+            'visit_id' => $this->visitId,
         ];
     }
 }

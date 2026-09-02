@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Http;
+use Jpeters8889\JourneyTrackerLaravel\Support\VisitKey;
 use Throwable;
 
 class LogPageViewJob implements ShouldQueue
@@ -23,10 +24,16 @@ class LogPageViewJob implements ShouldQueue
         //
     }
 
-    public function handle(): void
+    public function handle(VisitKey $visitKey): void
     {
         try {
-            Http::journeyTracker()->post('/api/page-view', $this->data->toArray());
+            $response = Http::journeyTracker()->post('/api/v1/page-view', $this->data->toArray());
+
+            $threshold = $response->json('visit_threshold_minutes');
+
+            if (is_int($threshold)) {
+                $visitKey->rememberThreshold($threshold);
+            }
         } catch (Throwable) {
             //
         }

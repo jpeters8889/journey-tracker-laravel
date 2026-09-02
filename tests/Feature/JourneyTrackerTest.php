@@ -60,18 +60,18 @@ it('reports isTracking as false on an excluded route', function (): void {
     expect($this->get('/cs-adm/dashboard')->getContent())->toBe('no');
 });
 
-it('exposes the session id of a tracked request', function (): void {
+it('exposes the visit id of a tracked request', function (): void {
     fakePageViewEndpoint();
 
-    trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->sessionId() ?? 'null');
+    trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->visitId() ?? 'null');
 
     expect($this->get('/blog')->getContent())->not->toBe('null');
 });
 
-it('has a null session id when the request is not tracked', function (): void {
+it('has a null visit id when the request is not tracked', function (): void {
     config(['journey-tracker-laravel.dont-track' => ['cs-adm/*']]);
 
-    trackedRoute('/cs-adm/dashboard', fn (): string => app(JourneyTracker::class)->sessionId() ?? 'null');
+    trackedRoute('/cs-adm/dashboard', fn (): string => app(JourneyTracker::class)->visitId() ?? 'null');
 
     expect($this->get('/cs-adm/dashboard')->getContent())->toBe('null');
 });
@@ -143,44 +143,39 @@ it('returns a query builder from query()', function (): void {
     expect(app(JourneyTracker::class)->query())->toBeInstanceOf(QueryBuilder::class);
 });
 
-it('tags the journey of a tracked request with the tracked session id', function (): void {
+it('tags the journey of a tracked request with the tracked visit id', function (): void {
     fakeAllEndpoints();
 
     trackedRoute('/checkout/complete', function (): string {
         JourneyTrackerFacade::tag('Shop Purchase');
 
-        return app(JourneyTracker::class)->sessionId() ?? 'null';
+        return app(JourneyTracker::class)->visitId() ?? 'null';
     });
 
-    $sessionId = $this->get('/checkout/complete')->getContent();
+    $visitId = $this->get('/checkout/complete')->getContent();
 
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/tag')
-        && $request->data() === ['session_id' => $sessionId, 'tag' => 'Shop Purchase']);
+        && $request->data() === ['session_id' => $visitId, 'tag' => 'Shop Purchase']);
 });
 
-it('falls back to the request session id when the request is not being tracked', function (): void {
+it('tags nothing when the request is not being tracked', function (): void {
     fakeTagEndpoint();
 
-    untrackedRoute('/checkout/complete', function (Illuminate\Http\Request $request): string {
+    untrackedRoute('/checkout/complete', function (): string {
         app(JourneyTracker::class)->tag('Shop Purchase');
 
-        return $request->session()->getId();
+        return 'ok';
     });
 
-    $sessionId = $this->get('/checkout/complete')->getContent();
+    $this->get('/checkout/complete')->assertOk();
 
-    expect($sessionId)->not->toBeEmpty();
-
-    Http::assertSent(fn (Request $request): bool => $request->data() === [
-        'session_id' => $sessionId,
-        'tag' => 'Shop Purchase',
-    ]);
+    Http::assertNothingSent();
 });
 
 it('tags identically whether called on the facade or the resolved instance', function (string $caller): void {
-    fakeTagEndpoint();
+    fakeAllEndpoints();
 
-    untrackedRoute('/checkout/complete', function () use ($caller): string {
+    trackedRoute('/checkout/complete', function () use ($caller): string {
         $caller === 'facade'
             ? JourneyTrackerFacade::tag('Shop Purchase')
             : app(JourneyTracker::class)->tag('Shop Purchase');
@@ -190,13 +185,14 @@ it('tags identically whether called on the facade or the resolved instance', fun
 
     $this->get('/checkout/complete');
 
-    Http::assertSent(fn (Request $request): bool => $request->data()['tag'] === 'Shop Purchase');
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/tag')
+        && $request->data()['tag'] === 'Shop Purchase');
 })->with(['facade', 'instance']);
 
 it('passes the tag through verbatim', function (string $tag): void {
-    fakeTagEndpoint();
+    fakeAllEndpoints();
 
-    untrackedRoute('/checkout/complete', function () use ($tag): string {
+    trackedRoute('/checkout/complete', function () use ($tag): string {
         app(JourneyTracker::class)->tag($tag);
 
         return 'ok';
@@ -204,7 +200,8 @@ it('passes the tag through verbatim', function (string $tag): void {
 
     $this->get('/checkout/complete');
 
-    Http::assertSent(fn (Request $request): bool => $request->data()['tag'] === $tag);
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/tag')
+        && $request->data()['tag'] === $tag);
 })->with([
     'Shop Purchase',
     'trial-started',
@@ -212,3 +209,37 @@ it('passes the tag through verbatim', function (string $tag): void {
     'plan: "pro" & annual',
     '0',
 ]);
+
+it('calls the confirmation endpoint as soon as the script runs', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->heartbeatScript());
+
+    expect($this->get('/blog')->getContent())
+        ->toContain("c='/journey-tracker-api/confirm'")
+        ->toContain('k();');
+});
+
+it('points the confirmation call at the configured endpoint', function (): void {
+    config(['journey-tracker-laravel.confirm-endpoint' => 'custom/confirm']);
+
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->heartbeatScript());
+
+    expect($this->get('/blog')->getContent())->toContain("c='/custom/confirm'");
+});
+
+it('falls back to the packaged confirmation endpoint when the published config predates the key', function (): void {
+    $config = config()->array('journey-tracker-laravel');
+
+    unset($config['confirm-endpoint']);
+
+    config(['journey-tracker-laravel' => $config]);
+
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->heartbeatScript());
+
+    expect($this->get('/blog')->getContent())->toContain("c='/journey-tracker-api/confirm'");
+});

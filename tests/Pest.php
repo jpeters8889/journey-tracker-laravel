@@ -28,15 +28,32 @@ function eventUrl(): string
     return '/' . config('journey-tracker-laravel.internal-event-endpoint');
 }
 
-function journeyToken(string $sessionId = 'session-abc', string $path = 'blog'): string
+function confirmUrl(): string
 {
-    return Crypt::encrypt(['session_id' => $sessionId, 'path' => $path]);
+    return '/' . config('journey-tracker-laravel.confirm-endpoint');
+}
+
+function journeyToken(string $visitId = 'session-abc', string $path = 'blog'): string
+{
+    return Crypt::encrypt(['visit_id' => $visitId, 'path' => $path]);
+}
+
+function legacyJourneyToken(string $visitId = 'session-abc', string $path = 'blog'): string
+{
+    return Crypt::encrypt(['session_id' => $visitId, 'path' => $path]);
 }
 
 function fakePageViewEndpoint(): void
 {
     Http::fake([
-        '*/api/page-view' => Http::response(),
+        '*/api/v1/page-view' => Http::response(),
+    ]);
+}
+
+function fakeConfirmEndpoint(): void
+{
+    Http::fake([
+        '*/api/v1/page-view/confirm' => Http::response(),
     ]);
 }
 
@@ -57,7 +74,7 @@ function fakeTagEndpoint(): void
 function fakeAllEndpoints(): void
 {
     Http::fake([
-        '*/api/page-view' => Http::response(),
+        '*/api/v1/page-view' => Http::response(),
         '*/api/event' => Http::response(),
         '*/api/tag' => Http::response(),
     ]);
@@ -90,25 +107,25 @@ function policyRequest(string $uri = '/blog', string $method = 'GET'): Request
     return $request;
 }
 
-function queuedTagData(string $sessionId = 'session-abc', string $tag = 'Shop Purchase'): QueuedTagData
+function queuedTagData(string $visitId = 'session-abc', string $tag = 'Shop Purchase'): QueuedTagData
 {
-    return new QueuedTagData($sessionId, $tag);
+    return new QueuedTagData($visitId, $tag);
 }
 
 function queuedPageViewData(
-    string $sessionId = 'session-abc',
+    string $visitId = 'session-abc',
     string $path = 'blog/my-post',
     ?string $route = 'blog.show',
     ?string $routePath = 'blog/{post}',
     int $timestamp = 1787577135,
     ?string $userAgent = 'JourneyBot/1.0',
 ): QueuedPageViewData {
-    return new QueuedPageViewData($sessionId, $path, $route, $routePath, $timestamp, $userAgent);
+    return new QueuedPageViewData($visitId, $path, $route, $routePath, $timestamp, $userAgent);
 }
 
 /** @param array<string, mixed> $data */
 function queuedEventData(
-    string $sessionId = 'session-abc',
+    string $visitId = 'session-abc',
     string $path = 'blog/my-post',
     EventType $eventType = EventType::CLICKED,
     string $eventIdentifier = 'BlogDetailCard',
@@ -116,7 +133,7 @@ function queuedEventData(
     bool $sensitive = false,
     int $timestamp = 1787577135,
 ): QueuedEventData {
-    return new QueuedEventData($sessionId, $path, $eventType, $eventIdentifier, $data, $sensitive, $timestamp);
+    return new QueuedEventData($visitId, $path, $eventType, $eventIdentifier, $data, $sensitive, $timestamp);
 }
 
 /**

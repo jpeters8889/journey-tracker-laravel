@@ -10,14 +10,20 @@ beforeEach(function (): void {
     $this->rule = new DecryptableToken($this->encrypter);
 });
 
-it('passes a token carrying a session id and a path', function (): void {
+it('passes a token carrying a visit id and a path', function (): void {
+    $token = $this->encrypter->encrypt(['visit_id' => 'visit-abc', 'path' => 'blog/my-post']);
+
+    expect(validationFailures($this->rule, $token))->toBeEmpty();
+});
+
+it('still passes a token minted before the visit id rename', function (): void {
     $token = $this->encrypter->encrypt(['session_id' => 'session-abc', 'path' => 'blog/my-post']);
 
     expect(validationFailures($this->rule, $token))->toBeEmpty();
 });
 
 it('passes a token carrying extra keys alongside the required ones', function (): void {
-    $token = $this->encrypter->encrypt(['session_id' => 'session-abc', 'path' => 'blog', 'extra' => true]);
+    $token = $this->encrypter->encrypt(['visit_id' => 'visit-abc', 'path' => 'blog', 'extra' => true]);
 
     expect(validationFailures($this->rule, $token))->toBeEmpty();
 });
@@ -42,7 +48,7 @@ it('fails a value that is not a string at all', function (mixed $value): void {
 it('fails a token encrypted with a different key', function (): void {
     $foreign = new Encrypter(Encrypter::generateKey('aes-256-cbc'), 'aes-256-cbc');
 
-    $token = $foreign->encrypt(['session_id' => 'session-abc', 'path' => 'blog']);
+    $token = $foreign->encrypt(['visit_id' => 'visit-abc', 'path' => 'blog']);
 
     expect(validationFailures($this->rule, $token))->toHaveCount(1);
 });
@@ -58,17 +64,20 @@ it('fails a token whose payload is not an array', function (mixed $payload): voi
 it('fails a token missing a required key', function (array $payload): void {
     expect(validationFailures($this->rule, $this->encrypter->encrypt($payload)))->toHaveCount(1);
 })->with([
-    'no session id' => [['path' => 'blog']],
-    'no path' => [['session_id' => 'session-abc']],
+    'no visit id' => [['path' => 'blog']],
+    'no path' => [['visit_id' => 'visit-abc']],
+    'no path on a legacy token' => [['session_id' => 'session-abc']],
     'neither' => [[]],
 ]);
 
 it('fails a token whose required keys are not strings', function (array $payload): void {
     expect(validationFailures($this->rule, $this->encrypter->encrypt($payload)))->toHaveCount(1);
 })->with([
-    'int session id' => [['session_id' => 42, 'path' => 'blog']],
-    'null path' => [['session_id' => 'session-abc', 'path' => null]],
-    'array path' => [['session_id' => 'session-abc', 'path' => ['blog']]],
+    'int visit id' => [['visit_id' => 42, 'path' => 'blog']],
+    'int session id on a legacy token' => [['session_id' => 42, 'path' => 'blog']],
+    'null visit id falls through to a missing session id' => [['visit_id' => null, 'path' => 'blog']],
+    'null path' => [['visit_id' => 'visit-abc', 'path' => null]],
+    'array path' => [['visit_id' => 'visit-abc', 'path' => ['blog']]],
 ]);
 
 it('names the attribute it failed on', function (): void {

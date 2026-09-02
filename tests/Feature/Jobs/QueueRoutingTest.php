@@ -39,7 +39,7 @@ it('routes a tag onto the configured queue', function (): void {
 
     Queue::fake();
 
-    untrackedRoute('/checkout', function (): string {
+    trackedRoute('/checkout', function (): string {
         app(JourneyTracker::class)->tag('Shop Purchase');
 
         return 'ok';
@@ -93,7 +93,7 @@ it('leaves the tag queue unset when none is configured', function (): void {
 
     Queue::fake();
 
-    untrackedRoute('/checkout', function (): string {
+    trackedRoute('/checkout', function (): string {
         app(JourneyTracker::class)->tag('Shop Purchase');
 
         return 'ok';

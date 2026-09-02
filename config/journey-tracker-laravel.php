@@ -15,5 +15,9 @@ return [
 
     'heartbeat-endpoint' => 'journey-tracker-api/heartbeat',
 
+    'confirm-endpoint' => 'journey-tracker-api/confirm',
+
+    'visit-threshold-minutes' => 15,
+
     'queue' => env('JOURNEY_TRACKER_QUEUE'),
 ];

@@ -33,7 +33,16 @@ it('keeps the internal keys out of the published config file', function (): void
 
     expect($published)->not->toHaveKey('host')
         ->and($published)->not->toHaveKey('verify-tls')
-        ->and($published)->toHaveKeys(['enabled', 'app-token', 'dont-track', 'queue']);
+        ->and($published)->toHaveKeys([
+            'enabled',
+            'app-token',
+            'dont-track',
+            'internal-event-endpoint',
+            'heartbeat-endpoint',
+            'confirm-endpoint',
+            'visit-threshold-minutes',
+            'queue',
+        ]);
 });
 
 it('still resolves the internal keys at runtime', function (): void {

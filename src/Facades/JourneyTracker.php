@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static string heartbeatScript()
  * @method static \Jpeters8889\JourneyTrackerLaravel\Query\QueryBuilder query()
  * @method static string|null token()
- * @method static string|null sessionId()
+ * @method static string|null visitId()
  * @method static bool isTracking()
  */
 class JourneyTracker extends Facade

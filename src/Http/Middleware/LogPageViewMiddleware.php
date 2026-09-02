@@ -6,16 +6,18 @@ namespace Jpeters8889\JourneyTrackerLaravel\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
 use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
 use Jpeters8889\JourneyTrackerLaravel\JourneyTracker;
+use Jpeters8889\JourneyTrackerLaravel\Support\TrackedRequest;
 use Jpeters8889\JourneyTrackerLaravel\Support\TrackingPolicy;
+use Symfony\Component\HttpFoundation\Response;
 
 class LogPageViewMiddleware
 {
     public function __construct(
         protected JourneyTracker $journeyTracker,
+        protected TrackedRequest $trackedRequest,
         protected TrackingPolicy $trackingPolicy,
     ) {
         //
@@ -35,27 +37,31 @@ class LogPageViewMiddleware
     public function handle(Request $request, Closure $next): mixed
     {
         if ($this->trackingPolicy->shouldTrackRequest($request)) {
-            $this->journeyTracker->startTracking();
+            $this->trackedRequest->start();
         }
 
         $response = $next($request);
 
-        $sessionId = $this->journeyTracker->sessionId();
+        $visitId = $this->trackedRequest->visitId();
 
-        if ($sessionId === null) {
+        if ($visitId === null) {
             return $response;
         }
 
+        $this->trackedRequest->persistVisit();
+
         LogPageViewJob::dispatch(new QueuedPageViewData(
-            $sessionId,
+            $visitId,
             $request->path(),
             $request->route()?->getName(),
             $request->route()?->uri(),
             time(),
             $request->userAgent(),
+            $this->trackedRequest->visitKeyWasNew(),
+            $this->trackedRequest->confirmationExpected(),
         ))->onQueue($this->journeyTracker->queue());
 
-        $token = $this->journeyTracker->token();
+        $token = $this->trackedRequest->token();
 
         if ($token !== null) {
             $response->headers->set('X-Journey-Token', $token);

@@ -12,7 +12,7 @@ final readonly class QueuedEventData
      * @param  array<array-key, mixed>  $data
      */
     public function __construct(
-        public string $sessionId,
+        public string $visitId,
         public string $path,
         public EventType $eventType,
         public string $eventIdentifier,
@@ -27,7 +27,7 @@ final readonly class QueuedEventData
     public function toArray(): array
     {
         return [
-            'session_id' => $this->sessionId,
+            'session_id' => $this->visitId,
             'path' => $this->path,
             'event_type' => $this->eventType->value,
             'event_identifier' => $this->eventIdentifier,

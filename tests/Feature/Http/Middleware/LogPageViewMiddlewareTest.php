@@ -25,8 +25,8 @@ it('logs a page view carrying the full payload', function (): void {
             && $data['route'] === 'blog.show'
             && $data['route_path'] === 'blog/my-post'
             && $data['user_agent'] === 'JourneyBot/1.0'
-            && is_string($data['session_id'])
-            && $data['session_id'] !== ''
+            && is_string($data['visit_id'])
+            && $data['visit_id'] !== ''
             && is_int($data['timestamp']);
     });
 });
@@ -141,7 +141,7 @@ it('sends the identical token in the response header and the page body', functio
     expect($response->headers->get('X-Journey-Token'))->toBe($response->getContent());
 });
 
-it('sets a header that decrypts to the request session and path even when nobody reads the token', function (): void {
+it('sets a header that decrypts to the request visit and path even when nobody reads the token', function (): void {
     fakePageViewEndpoint();
 
     trackedRoute('/blog/my-post', fn (): string => 'ok');
@@ -167,4 +167,61 @@ it('returns null from the deprecated accessor when the request is not tracked', 
     trackedRoute('/cs-adm/dashboard', fn (): string => LogPageViewMiddleware::getToken() ?? 'null');
 
     expect($this->get('/cs-adm/dashboard')->getContent())->toBe('null');
+});
+
+it('reports the visit key as freshly minted on a first request and reused on the next', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    $this->get('/blog');
+    $this->get('/blog');
+
+    $recorded = Http::recorded();
+
+    expect($recorded[0][0]->data()['visit_key_was_new'])->toBeTrue()
+        ->and($recorded[1][0]->data()['visit_key_was_new'])->toBeFalse()
+        ->and($recorded[1][0]->data()['visit_id'])->toBe($recorded[0][0]->data()['visit_id']);
+});
+
+it('tells the platform a confirmation is coming when the layout rendered the script', function (): void {
+    fakePageViewEndpoint();
+
+    Route::middleware(['web', LogPageViewMiddleware::class])
+        ->get('/blog', fn (): string => app('journey-tracker')->heartbeatScript());
+
+    $this->get('/blog');
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['confirmation_expected'] === true);
+});
+
+it('tells the platform no confirmation is coming when the layout has no script', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    $this->get('/blog');
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['confirmation_expected'] === false);
+});
+
+it('keeps the visit across a logout that invalidates the session', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    Route::middleware(['web', LogPageViewMiddleware::class])->get('/logout', function (): string {
+        session()->invalidate();
+
+        return 'ok';
+    });
+
+    $this->get('/blog');
+    $this->get('/logout');
+    $this->get('/blog');
+
+    $recorded = Http::recorded();
+
+    expect($recorded[2][0]->data()['visit_id'])->toBe($recorded[0][0]->data()['visit_id'])
+        ->and($recorded[2][0]->data()['visit_key_was_new'])->toBeFalse();
 });

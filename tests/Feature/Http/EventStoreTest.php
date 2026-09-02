@@ -13,7 +13,7 @@ it('accepts an event and forwards the whole payload', function (): void {
     $before = time();
 
     $this->postJson(eventUrl(), [
-        'token' => journeyToken(sessionId: 'session-abc', path: 'blog/my-post'),
+        'token' => journeyToken(visitId: 'session-abc', path: 'blog/my-post'),
         'event_type' => 'clicked',
         'event_identifier' => 'BlogDetailCard',
         'data' => ['id' => 7, 'plan' => 'pro'],
@@ -39,7 +39,7 @@ it('takes the session and path from the token, never from the request body', fun
     fakeEventEndpoint();
 
     $this->postJson(eventUrl(), [
-        'token' => journeyToken(sessionId: 'session-abc', path: 'blog'),
+        'token' => journeyToken(visitId: 'session-abc', path: 'blog'),
         'event_type' => 'clicked',
         'event_identifier' => 'cta',
         'session_id' => 'somebody-elses-session',
@@ -159,4 +159,16 @@ it('records events even for a path excluded by dont-track', function (): void {
     ])->assertNoContent();
 
     Http::assertSent(fn (Request $request): bool => $request->data()['path'] === 'cs-adm/dashboard');
+});
+
+it('still accepts an event from a token minted before the visit id rename', function (): void {
+    fakeEventEndpoint();
+
+    $this->postJson(eventUrl(), [
+        'token' => legacyJourneyToken(visitId: 'session-abc'),
+        'event_type' => 'clicked',
+        'event_identifier' => 'BlogDetailCard',
+    ])->assertNoContent();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['session_id'] === 'session-abc');
 });

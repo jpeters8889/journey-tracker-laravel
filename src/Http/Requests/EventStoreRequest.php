@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Jpeters8889\JourneyTrackerLaravel\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Validation\Rule;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedEventData;
 use Jpeters8889\JourneyTrackerLaravel\Enums\EventType;
 use Jpeters8889\JourneyTrackerLaravel\Rules\DecryptableToken;
+use Jpeters8889\JourneyTrackerLaravel\Support\JourneyToken;
 
 class EventStoreRequest extends FormRequest
 {
@@ -27,12 +27,11 @@ class EventStoreRequest extends FormRequest
 
     public function toData(): QueuedEventData
     {
-        /** @var array{session_id: string, path: string} $token */
-        $token = Crypt::decrypt($this->string('token')->toString());
+        $token = JourneyToken::decrypt($this->string('token')->toString());
 
         return new QueuedEventData(
-            sessionId: $token['session_id'],
-            path: $token['path'],
+            visitId: $token->visitId,
+            path: $token->path,
             eventType: EventType::from($this->string('event_type')->toString()),
             eventIdentifier: $this->string('event_identifier')->toString(),
             data: $this->array('data'),
