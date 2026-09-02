@@ -77,6 +77,12 @@ it('sends no authorization header when no app token is configured', function ():
     expect(Http::journeyTracker()->getOptions()['headers'])->not->toHaveKey('Authorization');
 });
 
+it('identifies itself and its version on every api call', function (): void {
+    expect(Http::journeyTracker()->getOptions()['headers']['X-Journey-Tracker-Client'])
+        ->toStartWith('laravel/')
+        ->not->toBe('laravel/');
+});
+
 it('asks for json back', function (): void {
     expect(Http::journeyTracker()->getOptions()['headers']['Accept'])->toBe('application/json');
 });
