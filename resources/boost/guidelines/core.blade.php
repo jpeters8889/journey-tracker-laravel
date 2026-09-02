@@ -9,13 +9,14 @@ Records visitor journeys — page views, custom events and tags — and queues t
 ## Page View Tracking
 
 - `LogPageViewMiddleware` in the `web` middleware group is what records page views. Removing it, or moving it out of `web`, silently stops all tracking with no error.
-- It must run after `StartSession`, because journeys are keyed on the session id. Appending it to the `web` group does this correctly.
+- It must run after `StartSession`, because the visit key that ties page views into one journey is stored in the session. Appending it to the `web` group does this correctly.
 @endscoped
 
 @scoped(['resources/views/**'])
-## Heartbeat
+## Heartbeat and confirmation
 
 - @verbatim`@journeyTracker`@endverbatim in the main layout records the page views the server never sees: back/forward cache restores and in-SPA history navigation. Do not remove it — those views are lost silently.
+- It also confirms on load that a real browser rendered the page. The first page view of a visit is held unwritten until that confirmation arrives, so traffic that stores no cookies and runs no JavaScript is never recorded and never billed. Removing the directive turns that filtering off — page views are then recorded immediately, as they were before.
 - It is safe in any layout. It renders nothing when the current request is not being tracked.
 @endscoped
 

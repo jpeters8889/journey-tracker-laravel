@@ -24,7 +24,8 @@ JOURNEY_TRACKER_TOKEN=your-token
 ```
 
 Register the page view middleware by appending it to the `web` group. It **must** run after
-`StartSession`, because journeys are keyed on the session id — appending does this correctly:
+`StartSession`, because the visit key that ties page views into one journey lives in the session —
+appending does this correctly:
 
 ```php
 // bootstrap/app.php
@@ -35,15 +36,25 @@ Register the page view middleware by appending it to the `web` group. It **must*
 })
 ```
 
-Add the heartbeat directive to your main layout, before `</body>`:
+Add the tracker directive to your main layout, before `</body>`:
 
 ```blade
 @journeyTracker
 ```
 
-It renders an empty string when the current request is not being tracked, and exists to catch the
-page views that never reach the server — back/forward cache restores, and history traversal inside
-an SPA.
+It renders an empty string when the current request is not being tracked, and does two things.
+
+It catches the page views that never reach the server — back/forward cache restores, and history
+traversal inside an SPA.
+
+It also confirms, on load, that a real browser rendered the page. The first page view of a visit
+is held unwritten until that confirmation arrives, so automated traffic that stores no cookies and
+runs no JavaScript is never recorded and never counts toward your ingest credits. Every later page
+view in the visit is recorded immediately, because the returning visit key is itself proof of a
+real client.
+
+Without the directive nothing breaks: page views are recorded immediately, exactly as they were
+before, and you get no filtering.
 
 ## Configuration
 
@@ -55,6 +66,8 @@ an SPA.
 | `dont-track` | — | `[]` | Patterns excluded from tracking |
 | `internal-event-endpoint` | — | `journey-tracker-api/event` | Route the package registers in your app |
 | `heartbeat-endpoint` | — | `journey-tracker-api/heartbeat` | Route the package registers in your app |
+| `confirm-endpoint` | — | `journey-tracker-api/confirm` | Route the package registers in your app |
+| `visit-threshold-minutes` | — | `15` | Minutes of silence that end a visit. The platform publishes its own value and that wins |
 
 `dont-track` patterns are matched with `Str::is()` against the request path, the route name, and the
 route URI. Prefer path patterns — SPA history navigation reports only a path, so name and URI
@@ -69,8 +82,9 @@ patterns are not applied to those page views.
 
 ## Usage
 
-Tag the current visitor's journey, for example after a conversion. Tags key off the session id, so
-this only works inside a web request:
+Tag the current visitor's journey, for example after a conversion. Tags key off the visit key, so
+this only works on a request the middleware is tracking — on an excluded route, or outside a web
+request, it does nothing:
 
 ```php
 use Jpeters8889\JourneyTrackerLaravel\Facades\JourneyTracker;

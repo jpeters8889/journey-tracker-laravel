@@ -20,7 +20,8 @@ php artisan vendor:publish --tag=journey-tracker-laravel-config
 ```
 
 Register the page view middleware by appending it to the `web` group. It **must** run after
-`StartSession`, because journeys are keyed on the session id — appending does this correctly:
+`StartSession`, because the visit key that ties page views into one journey lives in the session —
+appending does this correctly:
 
 ```php
 // bootstrap/app.php
@@ -38,9 +39,22 @@ Add the heartbeat directive to the main layout, before `</body>`:
 ```
 
 The directive is safe in every layout — it renders an empty string when the current request is not
-being tracked. It exists to catch the page views that never reach the server: back/forward cache
-restores, and history traversal inside an SPA where the framework restores from history rather than
-re-requesting. Without it those views are lost silently.
+being tracked. It does two things.
+
+It catches the page views that never reach the server: back/forward cache restores, and history
+traversal inside an SPA where the framework restores from history rather than re-requesting.
+Without it those views are lost silently.
+
+It also confirms on load that a real browser rendered the page. The first page view of a visit is
+held unwritten by the platform until that confirmation arrives, so automated traffic that stores no
+cookies and runs no JavaScript is never recorded and never counts toward ingest credits. Later page
+views in the same visit are recorded immediately — a returning visit key is itself proof of a real
+client. Removing the directive does not break tracking; page views are recorded immediately and
+nothing is filtered.
+
+A visit ends after a period of silence, at which point the next page view starts a new journey with
+a new visit key. The platform publishes that threshold on every page view response and the SDK
+adopts it, so `visit-threshold-minutes` is only a fallback for the very first call.
 
 ### Configuration
 
@@ -52,6 +66,8 @@ re-requesting. Without it those views are lost silently.
 | `dont-track` | — | `[]` | Patterns excluded from tracking |
 | `internal-event-endpoint` | — | `journey-tracker-api/event` | Route the package registers in your app |
 | `heartbeat-endpoint` | — | `journey-tracker-api/heartbeat` | Route the package registers in your app |
+| `confirm-endpoint` | — | `journey-tracker-api/confirm` | Route the package registers in your app |
+| `visit-threshold-minutes` | — | `15` | Fallback only; the platform publishes the value it uses |
 
 ### Excluding routes
 
@@ -85,8 +101,9 @@ use Jpeters8889\JourneyTrackerLaravel\Facades\JourneyTracker;
 JourneyTracker::tag('Shop Purchase');
 ```
 
-Tags key off the session id, so this only works **inside a web request**. Calling it from a queued
-job, a console command or a scheduled task will not attach the tag to the visitor's journey.
+Tags key off the visit key, so this only works **on a request the middleware is tracking**. On a
+`dont-track` route, or from a queued job, console command or scheduled task, `tag()` does nothing —
+there is no journey to attach it to.
 
 ## Event tracking
 
