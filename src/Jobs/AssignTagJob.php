@@ -26,7 +26,7 @@ class AssignTagJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            Http::journeyTracker()->post('/api/tag', $this->data->toArray());
+            Http::journeyTracker()->post('/api/v1/tag', $this->data->toArray());
         } catch (Throwable) {
             //
         }

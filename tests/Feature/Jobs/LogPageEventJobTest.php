@@ -12,7 +12,7 @@ it('posts the event payload to the api', function (): void {
 
     new LogPageEventJob(queuedEventData())->handle();
 
-    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/event')
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/v1/event')
         && $request->method() === 'POST'
         && $request->data() === [
             'session_id' => 'session-abc',

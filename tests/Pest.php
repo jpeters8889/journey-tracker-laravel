@@ -60,14 +60,14 @@ function fakeConfirmEndpoint(): void
 function fakeEventEndpoint(): void
 {
     Http::fake([
-        '*/api/event' => Http::response(),
+        '*/api/v1/event' => Http::response(),
     ]);
 }
 
 function fakeTagEndpoint(): void
 {
     Http::fake([
-        '*/api/tag' => Http::response(),
+        '*/api/v1/tag' => Http::response(),
     ]);
 }
 
@@ -75,8 +75,8 @@ function fakeAllEndpoints(): void
 {
     Http::fake([
         '*/api/v1/page-view' => Http::response(),
-        '*/api/event' => Http::response(),
-        '*/api/tag' => Http::response(),
+        '*/api/v1/event' => Http::response(),
+        '*/api/v1/tag' => Http::response(),
     ]);
 }
 
@@ -84,7 +84,7 @@ function fakeAllEndpoints(): void
 function fakeQueryResponse(array $data = ['metric' => 1]): void
 {
     Http::fake([
-        '*/api/query' => Http::response(['data' => $data]),
+        '*/api/v1/query' => Http::response(['data' => $data]),
     ]);
 }
 

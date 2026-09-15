@@ -89,7 +89,7 @@ class QueryBuilder
     public function get(): QueryResponse
     {
         /** @var array<string, int>|list<array<string, mixed>> $data */
-        $data = Http::journeyTracker()->post('/api/query', $this->buildPayload())->json('data');
+        $data = Http::journeyTracker()->post('/api/v1/query', $this->buildPayload())->json('data');
 
         return new QueryResponse($data);
     }
@@ -98,7 +98,7 @@ class QueryBuilder
     public function raw(array $payload): QueryResponse
     {
         /** @var array<string, int>|list<array<string, mixed>> $data */
-        $data = Http::journeyTracker()->post('/api/query', $payload)->json('data');
+        $data = Http::journeyTracker()->post('/api/v1/query', $payload)->json('data');
 
         return new QueryResponse($data);
     }

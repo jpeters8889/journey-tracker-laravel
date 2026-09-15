@@ -154,7 +154,7 @@ it('tags the journey of a tracked request with the tracked visit id', function (
 
     $visitId = $this->get('/checkout/complete')->getContent();
 
-    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/tag')
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/v1/tag')
         && $request->data() === ['session_id' => $visitId, 'tag' => 'Shop Purchase']);
 });
 
@@ -185,7 +185,7 @@ it('tags identically whether called on the facade or the resolved instance', fun
 
     $this->get('/checkout/complete');
 
-    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/tag')
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/v1/tag')
         && $request->data()['tag'] === 'Shop Purchase');
 })->with(['facade', 'instance']);
 
@@ -200,7 +200,7 @@ it('passes the tag through verbatim', function (string $tag): void {
 
     $this->get('/checkout/complete');
 
-    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/tag')
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/v1/tag')
         && $request->data()['tag'] === $tag);
 })->with([
     'Shop Purchase',

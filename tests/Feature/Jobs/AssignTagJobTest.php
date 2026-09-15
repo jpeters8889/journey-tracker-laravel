@@ -12,7 +12,7 @@ it('posts the tag payload to the api', function (): void {
 
     new AssignTagJob(queuedTagData())->handle();
 
-    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/tag')
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/v1/tag')
         && $request->method() === 'POST'
         && $request->data() === ['session_id' => 'session-abc', 'tag' => 'Shop Purchase']);
 });

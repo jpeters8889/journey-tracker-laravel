@@ -303,7 +303,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
 it('records a page view', function (): void {
-    Http::fake(['*/api/page-view' => Http::response()]);
+    Http::fake(['*/api/v1/page-view' => Http::response()]);
 
     $this->get('/blog/my-post')->assertOk();
 
@@ -311,6 +311,6 @@ it('records a page view', function (): void {
 });
 ```
 
-To assert a query without hitting the API, fake `*/api/query` and return a `data` key shaped like the
+To assert a query without hitting the API, fake `*/api/v1/query` and return a `data` key shaped like the
 response you expect. Ingest jobs are queued, so use `Queue::fake()` if you would rather assert
 dispatch than the outbound payload.

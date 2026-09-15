@@ -59,9 +59,9 @@ it('falls back to the cloud host when the host key is missing entirely', functio
 
     Http::fake();
 
-    Http::journeyTracker()->post('/api/tag', []);
+    Http::journeyTracker()->post('/api/v1/tag', []);
 
-    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://journey-tracker.cloud/api/tag');
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://journey-tracker.cloud/api/v1/tag');
 });
 
 it('sends api calls to the configured host', function (): void {
@@ -69,9 +69,9 @@ it('sends api calls to the configured host', function (): void {
 
     Http::fake();
 
-    Http::journeyTracker()->post('/api/tag', []);
+    Http::journeyTracker()->post('/api/v1/tag', []);
 
-    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://analytics.example.test/api/tag');
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://analytics.example.test/api/v1/tag');
 });
 
 it('authenticates api calls with the configured app token', function (): void {

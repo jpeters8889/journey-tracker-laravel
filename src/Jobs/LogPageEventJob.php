@@ -26,7 +26,7 @@ class LogPageEventJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            Http::journeyTracker()->post('/api/event', $this->data->toArray());
+            Http::journeyTracker()->post('/api/v1/event', $this->data->toArray());
         } catch (Throwable) {
             //
         }

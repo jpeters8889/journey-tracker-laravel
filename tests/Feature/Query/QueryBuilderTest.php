@@ -345,7 +345,7 @@ it('is reachable through the facade and returns a QueryResponse', function (): v
         ->and($response->signups)->toBe(42);
 
     Http::assertSent(
-        fn (Request $request): bool => str_ends_with($request->url(), '/api/query')
+        fn (Request $request): bool => str_ends_with($request->url(), '/api/v1/query')
             && $request->method() === 'POST'
             && $request->data()['type'] === 'count'
     );

@@ -23,7 +23,7 @@ it('accepts an event and forwards the whole payload', function (): void {
     Http::assertSent(function (Request $request) use ($before): bool {
         $data = $request->data();
 
-        return str_ends_with($request->url(), '/api/event')
+        return str_ends_with($request->url(), '/api/v1/event')
             && $data['session_id'] === 'session-abc'
             && $data['path'] === 'blog/my-post'
             && $data['event_type'] === 'clicked'
