@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Route;
 
 it('logs a page view against the token path when no path is sent', function (): void {
     fakePageViewEndpoint();
@@ -88,10 +89,21 @@ it('falls back to the token path when the supplied path is just a slash', functi
     Http::assertSent(fn (Request $request): bool => $request->data()['path'] === 'blog/my-post');
 });
 
-it('records a heartbeat with a null route and route path, because no route is resolved for one', function (): void {
+it('resolves the route the client supplied path belongs to', function (): void {
+    Route::get('blog/{post}', fn (): string => 'ok')->name('blog.show');
+
     fakePageViewEndpoint();
 
-    $this->postJson(heartbeatUrl(), ['token' => journeyToken()])->assertNoContent();
+    $this->postJson(heartbeatUrl(), ['token' => journeyToken(path: 'blog/my-post')])->assertNoContent();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['route'] === 'blog.show'
+        && $request->data()['route_path'] === 'blog/{post}');
+});
+
+it('records a heartbeat with a null route and route path when nothing matches the path', function (): void {
+    fakePageViewEndpoint();
+
+    $this->postJson(heartbeatUrl(), ['token' => journeyToken(path: 'nothing/here')])->assertNoContent();
 
     Http::assertSent(fn (Request $request): bool => $request->data()['route'] === null
         && $request->data()['route_path'] === null);
@@ -118,14 +130,16 @@ it('stamps the heartbeat with the current server time', function (): void {
         && $request->data()['timestamp'] <= time());
 });
 
-it('is not blocked by a dont-track route name, because a heartbeat resolves no route', function (): void {
+it('is blocked by a dont-track route name now a heartbeat resolves its route', function (): void {
+    Route::get('blog/{post}', fn (): string => 'ok')->name('blog.show');
+
     config(['journey-tracker-laravel.dont-track' => ['blog.show']]);
 
     fakePageViewEndpoint();
 
     $this->postJson(heartbeatUrl(), ['token' => journeyToken(path: 'blog/my-post')])->assertNoContent();
 
-    Http::assertSent(fn (Request $request): bool => $request->data()['path'] === 'blog/my-post');
+    Http::assertNothingSent();
 });
 
 it('rejects a tampered token with a validation error rather than a server error', function (): void {

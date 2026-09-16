@@ -25,12 +25,15 @@ class TrackerScript
         $confirmEndpoint = '/' . config()->string('journey-tracker-laravel.confirm-endpoint', 'journey-tracker-api/confirm');
 
         $script = <<<JS
-            (function(){var t='{$token}',u='{$endpoint}',c='{$confirmEndpoint}',h=false;
+            (function(){var t='{$token}',u='{$endpoint}',c='{$confirmEndpoint}',h=false,p=location.pathname;
             function s(){fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t,path:location.pathname})}).catch(function(){});}
             function k(){fetch(c,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t})}).catch(function(){});}
+            function n(){if(location.pathname===p){return;}p=location.pathname;s();}
+            function w(m){try{var o=history[m];if(typeof o!=='function'){return;}history[m]=function(){var r=o.apply(this,arguments);setTimeout(n,0);return r;};}catch(e){}}
             k();
+            w('pushState');w('replaceState');
             window.addEventListener('hashchange',function(){h=true;});
-            window.addEventListener('popstate',function(){setTimeout(function(){if(h){h=false;return;}s();},0);});
+            window.addEventListener('popstate',function(){setTimeout(function(){if(h){h=false;return;}p=location.pathname;s();},0);});
             window.addEventListener('pageshow',function(e){if(e.persisted){s();}});}());
             JS;
 

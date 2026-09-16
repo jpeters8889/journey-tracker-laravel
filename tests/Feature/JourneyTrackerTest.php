@@ -95,6 +95,17 @@ it('renders a heartbeat script listening for both popstate and pageshow', functi
         ->toContain('location.pathname');
 });
 
+it('renders a heartbeat script that follows client side navigation', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->heartbeatScript());
+
+    expect($this->get('/blog')->getContent())
+        ->toContain("w('pushState')")
+        ->toContain("w('replaceState')")
+        ->toContain('location.pathname===p');
+});
+
 it('embeds the current request token in the heartbeat script', function (): void {
     fakePageViewEndpoint();
 

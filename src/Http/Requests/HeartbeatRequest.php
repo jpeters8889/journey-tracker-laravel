@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
 use Jpeters8889\JourneyTrackerLaravel\Rules\DecryptableToken;
 use Jpeters8889\JourneyTrackerLaravel\Support\JourneyToken;
+use Jpeters8889\JourneyTrackerLaravel\Support\RouteResolver;
 
 class HeartbeatRequest extends FormRequest
 {
@@ -20,15 +21,17 @@ class HeartbeatRequest extends FormRequest
         ];
     }
 
-    public function toData(): QueuedPageViewData
+    public function toData(RouteResolver $routeResolver): QueuedPageViewData
     {
         $token = JourneyToken::decrypt($this->string('token')->toString());
+        $path = $this->trackedPath($token->path);
+        $route = $routeResolver->resolve($path, $this->getHost());
 
         return new QueuedPageViewData(
             visitId: $token->visitId,
-            path: $this->trackedPath($token->path),
-            route: null,
-            routePath: null,
+            path: $path,
+            route: $route->name,
+            routePath: $route->uri,
             timestamp: time(),
             userAgent: $this->userAgent(),
         );
