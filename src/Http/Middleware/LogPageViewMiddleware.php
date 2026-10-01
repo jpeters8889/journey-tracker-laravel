@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
 use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
 use Jpeters8889\JourneyTrackerLaravel\JourneyTracker;
+use Jpeters8889\JourneyTrackerLaravel\Support\TrackedQuery;
 use Jpeters8889\JourneyTrackerLaravel\Support\TrackedRequest;
 use Jpeters8889\JourneyTrackerLaravel\Support\TrackingPolicy;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +20,7 @@ class LogPageViewMiddleware
         protected JourneyTracker $journeyTracker,
         protected TrackedRequest $trackedRequest,
         protected TrackingPolicy $trackingPolicy,
+        protected TrackedQuery $trackedQuery,
     ) {
         //
     }
@@ -59,6 +61,7 @@ class LogPageViewMiddleware
             $request->userAgent(),
             $this->trackedRequest->visitKeyWasNew(),
             $this->trackedRequest->confirmationExpected(),
+            $this->trackedQuery->filter($request->query()),
         ))->onQueue($this->journeyTracker->queue());
 
         $token = $this->trackedRequest->token();

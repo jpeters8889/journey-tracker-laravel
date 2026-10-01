@@ -9,6 +9,7 @@ use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedPageViewData;
 use Jpeters8889\JourneyTrackerLaravel\Rules\DecryptableToken;
 use Jpeters8889\JourneyTrackerLaravel\Support\JourneyToken;
 use Jpeters8889\JourneyTrackerLaravel\Support\RouteResolver;
+use Jpeters8889\JourneyTrackerLaravel\Support\TrackedQuery;
 
 class HeartbeatRequest extends FormRequest
 {
@@ -18,10 +19,11 @@ class HeartbeatRequest extends FormRequest
         return [
             'token' => ['required', 'string', $decryptableToken],
             'path' => ['sometimes', 'string'],
+            'query' => ['sometimes', 'nullable', 'string'],
         ];
     }
 
-    public function toData(RouteResolver $routeResolver): QueuedPageViewData
+    public function toData(RouteResolver $routeResolver, TrackedQuery $trackedQuery): QueuedPageViewData
     {
         $token = JourneyToken::decrypt($this->string('token')->toString());
         $path = $this->trackedPath($token->path);
@@ -34,6 +36,7 @@ class HeartbeatRequest extends FormRequest
             routePath: $route->uri,
             timestamp: time(),
             userAgent: $this->userAgent(),
+            query: $trackedQuery->filterQueryString($this->string('query')->toString()),
         );
     }
 

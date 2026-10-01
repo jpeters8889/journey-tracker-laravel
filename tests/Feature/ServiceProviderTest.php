@@ -37,6 +37,7 @@ it('keeps the internal keys out of the published config file', function (): void
             'enabled',
             'app-token',
             'dont-track',
+            'track-query-strings',
             'internal-event-endpoint',
             'heartbeat-endpoint',
             'confirm-endpoint',

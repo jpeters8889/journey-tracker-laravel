@@ -29,6 +29,50 @@ it('prefers a client supplied path over the one baked into the token', function 
     Http::assertSent(fn (Request $request): bool => $request->data()['path'] === 'blog/my-post');
 });
 
+it('sends only the allowed query string parameters', function (): void {
+    config(['journey-tracker-laravel.track-query-strings' => ['page', 'meals']]);
+
+    fakePageViewEndpoint();
+
+    $this->postJson(heartbeatUrl(), [
+        'token' => journeyToken(),
+        'path' => '/recipes',
+        'query' => '?page=2&meals=lunch&fbclid=abc',
+    ])->assertNoContent();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['query'] === ['meals' => 'lunch', 'page' => '2']);
+});
+
+it('sends a null query when no query string is sent', function (): void {
+    fakePageViewEndpoint();
+
+    $this->postJson(heartbeatUrl(), ['token' => journeyToken()])->assertNoContent();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['query'] === null);
+});
+
+it('sends a null query when nothing in the query string is allowed', function (): void {
+    fakePageViewEndpoint();
+
+    $this->postJson(heartbeatUrl(), [
+        'token' => journeyToken(),
+        'query' => '?fbclid=abc&utm_source=newsletter',
+    ])->assertNoContent();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['query'] === null);
+});
+
+it('rejects a query that is not a string', function (): void {
+    fakePageViewEndpoint();
+
+    $this->postJson(heartbeatUrl(), [
+        'token' => journeyToken(),
+        'query' => ['page' => '2'],
+    ])->assertUnprocessable();
+
+    Http::assertNothingSent();
+});
+
 it('normalises the leading slash that location.pathname always carries', function (): void {
     fakePageViewEndpoint();
 

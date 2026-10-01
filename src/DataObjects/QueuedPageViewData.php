@@ -6,6 +6,7 @@ namespace Jpeters8889\JourneyTrackerLaravel\DataObjects;
 
 final readonly class QueuedPageViewData
 {
+    /** @param  array<string, string|array<array-key, mixed>>|null  $query */
     public function __construct(
         public string $visitId,
         public string $path,
@@ -15,6 +16,7 @@ final readonly class QueuedPageViewData
         public ?string $userAgent = null,
         public bool $visitKeyWasNew = false,
         public bool $confirmationExpected = false,
+        public ?array $query = null,
     ) {
         //
     }
@@ -31,6 +33,7 @@ final readonly class QueuedPageViewData
             'user_agent' => $this->userAgent,
             'visit_key_was_new' => $this->visitKeyWasNew,
             'confirmation_expected' => $this->confirmationExpected,
+            'query' => $this->query,
         ];
     }
 }

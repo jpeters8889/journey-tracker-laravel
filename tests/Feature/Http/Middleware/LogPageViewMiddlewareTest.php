@@ -31,6 +31,29 @@ it('logs a page view carrying the full payload', function (): void {
     });
 });
 
+it('sends only the allowed query string parameters', function (): void {
+    config(['journey-tracker-laravel.track-query-strings' => ['page', 'freeFrom']]);
+
+    fakePageViewEndpoint();
+
+    trackedRoute('/recipes', fn (): string => 'ok');
+
+    $this->get('/recipes?page=3&freeFrom[]=egg&freeFrom[]=dairy&fbclid=abc')->assertOk();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['path'] === 'recipes'
+        && $request->data()['query'] === ['freeFrom' => ['egg', 'dairy'], 'page' => '3']);
+});
+
+it('sends a null query when the request has no allowed query string parameters', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/recipes', fn (): string => 'ok');
+
+    $this->get('/recipes?utm_source=newsletter')->assertOk();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['query'] === null);
+});
+
 it('sends a null route but still sends the route path for an unnamed route', function (): void {
     fakePageViewEndpoint();
 

@@ -16,6 +16,7 @@ it('serialises to the wire shape the api expects', function (): void {
         'user_agent' => 'JourneyBot/1.0',
         'visit_key_was_new' => false,
         'confirmation_expected' => false,
+        'query' => null,
     ]);
 });
 
@@ -50,4 +51,10 @@ it('reports whether the visit key was freshly minted and whether the client can 
         ->toHaveKeys(['visit_key_was_new', 'confirmation_expected'])
         ->and($data->toArray()['visit_key_was_new'])->toBeTrue()
         ->and($data->toArray()['confirmation_expected'])->toBeTrue();
+});
+
+it('sends the tracked query string parameters', function (): void {
+    $data = new QueuedPageViewData('session', 'recipes', null, null, 1787577135, query: ['meals' => 'lunch', 'page' => '2']);
+
+    expect($data->toArray()['query'])->toBe(['meals' => 'lunch', 'page' => '2']);
 });

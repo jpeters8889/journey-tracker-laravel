@@ -11,6 +11,11 @@ return [
         //
     ],
 
+    'track-query-strings' => [
+        'page',
+        'cursor',
+    ],
+
     'internal-event-endpoint' => 'journey-tracker-api/event',
 
     'heartbeat-endpoint' => 'journey-tracker-api/heartbeat',

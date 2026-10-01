@@ -9,6 +9,7 @@ use Jpeters8889\JourneyTrackerLaravel\Http\Requests\HeartbeatRequest;
 use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
 use Jpeters8889\JourneyTrackerLaravel\JourneyTracker;
 use Jpeters8889\JourneyTrackerLaravel\Support\RouteResolver;
+use Jpeters8889\JourneyTrackerLaravel\Support\TrackedQuery;
 use Jpeters8889\JourneyTrackerLaravel\Support\TrackingPolicy;
 
 class HeartbeatController
@@ -18,8 +19,9 @@ class HeartbeatController
         TrackingPolicy $trackingPolicy,
         JourneyTracker $journeyTracker,
         RouteResolver $routeResolver,
+        TrackedQuery $trackedQuery,
     ): Response {
-        $data = $request->toData($routeResolver);
+        $data = $request->toData($routeResolver, $trackedQuery);
 
         if ($trackingPolicy->shouldTrackPath($data->path, $data->route, $data->routePath)) {
             LogPageViewJob::dispatch($data)->onQueue($journeyTracker->queue());

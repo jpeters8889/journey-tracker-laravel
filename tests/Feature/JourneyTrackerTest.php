@@ -103,7 +103,7 @@ it('renders a heartbeat script that follows client side navigation', function ()
     expect($this->get('/blog')->getContent())
         ->toContain("w('pushState')")
         ->toContain("w('replaceState')")
-        ->toContain('location.pathname===p');
+        ->toContain('l()===p');
 });
 
 it('embeds the current request token in the heartbeat script', function (): void {
@@ -253,4 +253,18 @@ it('falls back to the packaged confirmation endpoint when the published config p
     trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->heartbeatScript());
 
     expect($this->get('/blog')->getContent())->toContain("c='/journey-tracker-api/confirm'");
+});
+
+it('renders a heartbeat script that follows changes to the tracked query string', function (): void {
+    config(['journey-tracker-laravel.track-query-strings' => ['page', '*Page']]);
+
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => app(JourneyTracker::class)->heartbeatScript());
+
+    expect($this->get('/blog')->getContent())
+        ->toContain('location.search')
+        ->toContain('query:location.search')
+        ->toContain('^page$')
+        ->toContain('^.*Page$');
 });

@@ -27,4 +27,11 @@ Records visitor journeys — page views, custom events and tags — and queues t
 - Patterns are matched against the request path, the route name and the route URI. **Prefer path patterns** — only those are honoured for back/forward navigation, where no route is resolved.
 @endscoped
 
+@scoped(['config/**'])
+## Query Strings
+
+- Only query string parameters listed in `track-query-strings` are sent with a page view, matched with `Str::is()`. The default is Laravel's pagination parameters, `page` and `cursor`.
+- Add a filter or sort parameter when a change to it should count as a new page view. Never add one that carries a secret or personal data.
+@endscoped
+
 For event tracking, tagging and querying collected data, use the `journey-tracker-development` skill.

@@ -64,6 +64,7 @@ before, and you get no filtering.
 | `app-token` | `JOURNEY_TRACKER_TOKEN` | `null` | Authenticates against the API |
 | `queue` | `JOURNEY_TRACKER_QUEUE` | `null` | Queue name for the ingest jobs |
 | `dont-track` | — | `[]` | Patterns excluded from tracking |
+| `track-query-strings` | — | `['page', 'cursor']` | Query string parameters sent with each page view |
 | `internal-event-endpoint` | — | `journey-tracker-api/event` | Route the package registers in your app |
 | `heartbeat-endpoint` | — | `journey-tracker-api/heartbeat` | Route the package registers in your app |
 | `confirm-endpoint` | — | `journey-tracker-api/confirm` | Route the package registers in your app |
@@ -79,6 +80,29 @@ patterns are not applied to those page views.
     'admin/*',
 ],
 ```
+
+## Tracking query strings
+
+Only the query string parameters named in `track-query-strings` are sent, matched with `Str::is()`
+against the parameter name. Everything else (`fbclid`, `utm_*`, signed URL signatures, reset tokens)
+never leaves your app. The defaults cover Laravel's paginators, `page` and `cursor`.
+
+A view of the same page with different tracked parameters is a new page view, so paging through
+`blog?page=1` to `blog?page=10` records ten views of `blog`. A change to an untracked parameter is
+still treated as a reload.
+
+```php
+'track-query-strings' => [
+    'page',
+    'cursor',
+    '*Page',
+    'meals',
+    'freeFrom',
+],
+```
+
+Values are sent exactly as they arrive: `freeFrom=egg,dairy` is one value, `freeFrom[]=egg&freeFrom[]=dairy`
+is a list.
 
 ## Usage
 

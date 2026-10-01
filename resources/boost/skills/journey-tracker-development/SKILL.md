@@ -64,6 +64,7 @@ adopts it, so `visit-threshold-minutes` is only a fallback for the very first ca
 | `app-token` | `JOURNEY_TRACKER_TOKEN` | `null` | Authenticates against the API |
 | `queue` | `JOURNEY_TRACKER_QUEUE` | `null` | Queue name for the ingest jobs |
 | `dont-track` | — | `[]` | Patterns excluded from tracking |
+| `track-query-strings` | — | `['page', 'cursor']` | Query string parameters sent with each page view |
 | `internal-event-endpoint` | — | `journey-tracker-api/event` | Route the package registers in your app |
 | `heartbeat-endpoint` | — | `journey-tracker-api/heartbeat` | Route the package registers in your app |
 | `confirm-endpoint` | — | `journey-tracker-api/confirm` | Route the package registers in your app |
@@ -90,6 +91,24 @@ genuinely must never be recorded should be expressed as a path pattern.
 Requests are also skipped automatically when they are not `GET`, carry no session, are an Inertia
 partial reload, or are a prefetch (`Purpose: prefetch` or `Sec-Purpose`). You do not need to exclude
 those yourself.
+
+### Tracking query strings
+
+Only parameters named in `track-query-strings` are sent, matched with `Str::is()` against the
+parameter name. Anything not listed never leaves the app. Defaults are `page` and `cursor`, which
+cover Laravel's paginators.
+
+Add the parameters that change what a page shows, such as filters and sorting, so the platform
+counts a change to them as a new page view. Never add parameters carrying secrets or personal data.
+
+```php
+'track-query-strings' => [
+    'page',
+    'cursor',
+    'commentsPage',  // a named paginator
+    'meals',         // a filter
+],
+```
 
 ## Tagging a journey
 

@@ -24,6 +24,7 @@ it('posts the page view payload to the api', function (): void {
             'user_agent' => 'JourneyBot/1.0',
             'visit_key_was_new' => false,
             'confirmation_expected' => false,
+            'query' => null,
         ]);
 });
 
