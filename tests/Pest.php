@@ -93,6 +93,11 @@ function trackedRoute(string $uri, Closure $handler): void
     Route::middleware(['web', LogPageViewMiddleware::class])->get($uri, $handler);
 }
 
+function trackedPostRoute(string $uri, Closure $handler): void
+{
+    Route::middleware(['web', LogPageViewMiddleware::class])->post($uri, $handler);
+}
+
 function untrackedRoute(string $uri, Closure $handler): void
 {
     Route::middleware(['web'])->get($uri, $handler);

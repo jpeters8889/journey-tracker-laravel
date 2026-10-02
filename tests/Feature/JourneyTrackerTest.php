@@ -169,6 +169,24 @@ it('tags the journey of a tracked request with the tracked visit id', function (
         && $request->data() === ['session_id' => $visitId, 'tag' => 'Shop Purchase']);
 });
 
+it('tags from a post request using the visit already in the session', function (): void {
+    fakeAllEndpoints();
+
+    trackedRoute('/article', fn (): string => app(JourneyTracker::class)->visitId() ?? 'null');
+    trackedPostRoute('/comments', function (): string {
+        app(JourneyTracker::class)->tag('Comment Posted');
+
+        return 'ok';
+    });
+
+    $visitId = $this->get('/article')->getContent();
+
+    $this->post('/comments')->assertOk();
+
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/api/v1/tag')
+        && $request->data() === ['session_id' => $visitId, 'tag' => 'Comment Posted']);
+});
+
 it('tags nothing when the request is not being tracked', function (): void {
     fakeTagEndpoint();
 

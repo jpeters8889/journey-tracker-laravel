@@ -9,12 +9,14 @@ use Jpeters8889\JourneyTrackerLaravel\Jobs\AssignTagJob;
 use Jpeters8889\JourneyTrackerLaravel\Query\QueryBuilder;
 use Jpeters8889\JourneyTrackerLaravel\Support\TrackedRequest;
 use Jpeters8889\JourneyTrackerLaravel\Support\TrackerScript;
+use Jpeters8889\JourneyTrackerLaravel\Support\VisitKey;
 
 class JourneyTracker
 {
     public function __construct(
         protected TrackedRequest $trackedRequest,
         protected TrackerScript $trackerScript,
+        protected VisitKey $visitKey,
     ) {
         //
     }
@@ -36,7 +38,7 @@ class JourneyTracker
 
     public function tag(string $tag): void
     {
-        $visitId = $this->visitId();
+        $visitId = $this->visitId() ?? $this->visitKey->stored()?->id;
 
         if ($visitId === null) {
             return;

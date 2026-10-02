@@ -27,6 +27,21 @@ class VisitKey
         return $this->persist(new Visit($stored->id, $now, wasNew: false));
     }
 
+    public function stored(): ?Visit
+    {
+        if ( ! $this->request->hasSession()) {
+            return null;
+        }
+
+        $stored = Visit::fromSession($this->request->session()->get($this->sessionKey()));
+
+        if ( ! $stored instanceof Visit) {
+            return null;
+        }
+
+        return (now()->getTimestamp() - $stored->seen) > $this->thresholdSeconds() ? null : $stored;
+    }
+
     public function persist(Visit $visit): Visit
     {
         $this->request->session()->put($this->sessionKey(), $visit->toArray());
