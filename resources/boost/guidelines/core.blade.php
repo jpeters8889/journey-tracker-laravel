@@ -3,7 +3,9 @@
 @endphp
 # Journey Tracker
 
-Records visitor journeys — page views, custom events and tags — and queues them to journey-tracker.cloud. All configuration lives in `config/journey-tracker-laravel.php`.
+Records visitor journeys — page views, custom events and tags — and queues them to journey-tracker.cloud. Configuration lives in `config/journey-tracker-laravel.php`, and everything is sent by queued jobs, so a worker has to be running for any of it to arrive.
+
+Full documentation is at https://journey-tracker.cloud/docs.
 
 @scoped(['bootstrap/app.php', 'app/Http/Kernel.php', 'app/Http/Middleware/**'])
 ## Page View Tracking
@@ -15,8 +17,8 @@ Records visitor journeys — page views, custom events and tags — and queues t
 @scoped(['resources/views/**'])
 ## Heartbeat and confirmation
 
-- @verbatim`@journeyTracker`@endverbatim in the main layout records the page views the server never sees: back/forward cache restores and in-SPA history navigation. Do not remove it — those views are lost silently.
-- It also confirms on load that a real browser rendered the page. The first page view of a visit is held unwritten until that confirmation arrives, so traffic that stores no cookies and runs no JavaScript is never recorded and never billed. Removing the directive turns that filtering off — page views are then recorded immediately, as they were before.
+- @verbatim`@journeyTracker`@endverbatim in the main layout reports the page views the server never sees: back/forward cache restores and in-SPA history navigation. Do not remove it — those views are lost silently.
+- It also confirms on load that a real browser rendered the page, which is what keeps automated traffic out. Removing the directive turns that filtering off — page views are then recorded as they arrive.
 - It is safe in any layout. It renders nothing when the current request is not being tracked.
 @endscoped
 

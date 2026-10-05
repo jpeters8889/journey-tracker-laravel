@@ -16,6 +16,18 @@ back out. Everything it sends is dispatched to the queue, so nothing blocks a re
 
 ```bash
 composer require jpeters8889/journey-tracker-laravel
+```
+
+Set the app's key in `.env`. Without it every send goes out unauthenticated and is discarded at the
+far end, silently:
+
+```dotenv
+JOURNEY_TRACKER_TOKEN=your-key
+```
+
+Publishing the config is optional — `mergeConfigFrom` means every key already resolves:
+
+```bash
 php artisan vendor:publish --tag=journey-tracker-laravel-config
 ```
 
@@ -60,7 +72,7 @@ adopts it, so `visit-threshold-minutes` is only a fallback for the very first ca
 
 | Key | Env | Default | Purpose |
 | --- | --- | --- | --- |
-| `enabled` | `JOURNEY_TRACKER_ENABLED` | `true` | Master switch. When false, nothing is recorded at all |
+| `enabled` | `JOURNEY_TRACKER_ENABLED` | `true` | Gates page views. Nothing else works without one, so it stops collection in practice. Use `true`/`false`, not `1`/`0`, which throws |
 | `app-token` | `JOURNEY_TRACKER_TOKEN` | `null` | Authenticates against the API |
 | `queue` | `JOURNEY_TRACKER_QUEUE` | `null` | Queue name for the ingest jobs |
 | `dont-track` | — | `[]` | Patterns excluded from tracking |
@@ -120,9 +132,13 @@ use Jpeters8889\JourneyTrackerLaravel\Facades\JourneyTracker;
 JourneyTracker::tag('Shop Purchase');
 ```
 
-Tags key off the visit key, so this only works **on a request the middleware is tracking**. On a
-`dont-track` route, or from a queued job, console command or scheduled task, `tag()` does nothing —
-there is no journey to attach it to.
+Tagging reads the visit key out of the session, so it works on **any request that has one** — a
+`POST` that completes an order, a route in `dont-track`, an endpoint your frontend called. What it
+cannot do is work outside a request: from a queued job, console command or scheduled task there is no
+session, so `tag()` does nothing.
+
+If the thing you want to mark happens in a job, tag on the next request the visitor makes. They are
+still in the same journey.
 
 ## Event tracking
 
@@ -213,6 +229,7 @@ export default () => {
     }
 
     axios
+      // the path comes from internal-event-endpoint; pass it in if you change it
       .post('/journey-tracker-api/event', {
         token,
         event_type: type,
@@ -262,7 +279,7 @@ $metrics = JourneyTracker::query()
     )
     ->get();
 
-$metrics->get('views');   // int
+$metrics->get('views');   // int, and throws if that alias was not in the query
 $metrics->card_views;     // int, same thing via magic accessor
 ```
 
@@ -309,6 +326,11 @@ Filters can also be chained straight onto the builder, in which case they attach
 recent** `count()`. Prefer the closure form above — it makes the association explicit and cannot be
 misordered.
 
+`get()` throws on an alias the query did not carry, and on **any** alias when `daily()` was used —
+there is no single number to return. `all()` is the reader for a daily result.
+
+Calling `withEvent()` or `withPage()` on the builder before any `count()` throws a `LogicException`.
+
 `raw(array $payload)` posts a payload verbatim as an escape hatch. It ignores every other builder
 method, including date ranges, so do not combine them.
 
@@ -317,11 +339,31 @@ method, including date ranges, so do not combine them.
 The SDK talks to the API through an `Http` macro, so `Http::fake()` covers everything without
 reaching the network.
 
+Everything that sends data is a queued job, so the outbound call only happens inside a test when the
+queue runs inline. On the default `database` connection nothing is sent and `Http::assertSent()`
+fails. Either pin `QUEUE_CONNECTION=sync` in `phpunit.xml`, or assert the dispatch instead:
+
+```php
+use Illuminate\Support\Facades\Queue;
+use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
+
+it('records a page view', function (): void {
+    Queue::fake();
+
+    $this->get('/blog/my-post')->assertOk();
+
+    Queue::assertPushed(LogPageViewJob::class);
+});
+```
+
+With `sync`, fake the endpoint and assert the payload instead — note the wire uses `session_id` for
+events and tags, and `visit_id` for page views:
+
 ```php
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
-it('records a page view', function (): void {
+it('sends the path it tracked', function (): void {
     Http::fake(['*/api/v1/page-view' => Http::response()]);
 
     $this->get('/blog/my-post')->assertOk();
@@ -330,6 +372,9 @@ it('records a page view', function (): void {
 });
 ```
 
-To assert a query without hitting the API, fake `*/api/v1/query` and return a `data` key shaped like the
-response you expect. Ingest jobs are queued, so use `Queue::fake()` if you would rather assert
-dispatch than the outbound payload.
+Queries are not queued, so they need no such care — fake `*/api/v1/query` returning a `data` key
+shaped like the response your code reads.
+
+The usual way to take the package out of a test suite entirely is `JOURNEY_TRACKER_ENABLED=false` in
+`phpunit.xml`. That stops page views, and with no page view there is no visit, so tags and events go
+quiet too. It does **not** stop a query, which has no request state behind it.

@@ -1,31 +1,38 @@
 # Journey Tracker for Laravel
 
-Server-side SDK for [journey-tracker.cloud](https://journey-tracker.cloud). It records page views
-automatically via middleware, accepts custom events from your frontend, lets you tag a journey, and
-queries the collected data back out. Everything it sends is dispatched to the queue, so nothing
-blocks a response.
+Server-side SDK for [journey-tracker.cloud](https://journey-tracker.cloud). Register one piece of
+middleware and every page view is recorded and stitched into a journey — the whole path a visitor
+took through your application, in order, rather than a pile of unrelated page views.
+
+It also accepts custom events from your frontend, lets you tag a journey from anywhere in your code,
+and reads the collected counts back out with a fluent builder.
+
+Nothing is sent from the request itself. Every send is a queued job, so your responses never wait on
+us and never fail because of us.
 
 ## Requirements
 
 - PHP 8.4+
 - Laravel 12.61+ or 13.23+
+- A session driver, a cache store, and a queue worker
+
+The session is where the visit key lives, the cache holds the value we publish for how long a visit
+lasts, and the worker is what actually sends anything. With no worker running, nothing arrives.
 
 ## Installation
 
 ```bash
 composer require jpeters8889/journey-tracker-laravel
-php artisan vendor:publish --tag=journey-tracker-laravel-config
 ```
 
-Set your application token in `.env`:
+Put your app's key in `.env`. You'll find it in Journey Tracker under **Manage → API Keys**:
 
 ```dotenv
-JOURNEY_TRACKER_TOKEN=your-token
+JOURNEY_TRACKER_TOKEN=your-key
 ```
 
-Register the page view middleware by appending it to the `web` group. It **must** run after
-`StartSession`, because the visit key that ties page views into one journey lives in the session —
-appending does this correctly:
+Append the middleware to the `web` group. It has to run after `StartSession`, because the visit key
+lives in the session, and appending does that:
 
 ```php
 // bootstrap/app.php
@@ -36,106 +43,71 @@ appending does this correctly:
 })
 ```
 
-Add the tracker directive to your main layout, before `</body>`:
+Add the directive to your layout, before `</body>`:
 
 ```blade
 @journeyTracker
 ```
 
-It renders an empty string when the current request is not being tracked, and does two things.
+That's the install. [Installation](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/installation)
+covers what each step does, what the directive buys you, and how to check it worked.
 
-It catches the page views that never reach the server — back/forward cache restores, and history
-traversal inside an SPA.
+Publishing the config file is optional — every setting already has a default:
 
-It also confirms, on load, that a real browser rendered the page. The first page view of a visit
-is held unwritten until that confirmation arrives, so automated traffic that stores no cookies and
-runs no JavaScript is never recorded and never counts toward your ingest credits. Every later page
-view in the visit is recorded immediately, because the returning visit key is itself proof of a
-real client.
-
-Without the directive nothing breaks: page views are recorded immediately, exactly as they were
-before, and you get no filtering.
-
-## Configuration
-
-| Key | Env | Default | Purpose |
-| --- | --- | --- | --- |
-| `enabled` | `JOURNEY_TRACKER_ENABLED` | `true` | Master switch. When false, nothing is recorded at all |
-| `app-token` | `JOURNEY_TRACKER_TOKEN` | `null` | Authenticates against the API |
-| `queue` | `JOURNEY_TRACKER_QUEUE` | `null` | Queue name for the ingest jobs |
-| `dont-track` | — | `[]` | Patterns excluded from tracking |
-| `track-query-strings` | — | `['page', 'cursor']` | Query string parameters sent with each page view |
-| `internal-event-endpoint` | — | `journey-tracker-api/event` | Route the package registers in your app |
-| `heartbeat-endpoint` | — | `journey-tracker-api/heartbeat` | Route the package registers in your app |
-| `confirm-endpoint` | — | `journey-tracker-api/confirm` | Route the package registers in your app |
-| `visit-threshold-minutes` | — | `15` | Minutes of silence that end a visit. The platform publishes its own value and that wins |
-
-`dont-track` patterns are matched with `Str::is()` against the request path, the route name, and the
-route URI. Prefer path patterns — SPA history navigation reports only a path, so name and URI
-patterns are not applied to those page views.
-
-```php
-'dont-track' => [
-    'horizon/*',
-    'admin/*',
-],
+```bash
+php artisan vendor:publish --tag=journey-tracker-laravel-config
 ```
 
-## Tracking query strings
+## What it adds to your application
 
-Only the query string parameters named in `track-query-strings` are sent, matched with `Str::is()`
-against the parameter name. Everything else (`fbclid`, `utm_*`, signed URL signatures, reset tokens)
-never leaves your app. The defaults cover Laravel's paginators, `page` and `cursor`.
+Three `POST` routes, which the browser half of the package talks to:
 
-A view of the same page with different tracked parameters is a new page view, so paging through
-`blog?page=1` to `blog?page=10` records ten views of `blog`. A change to an untracked parameter is
-still treated as a reload.
-
-```php
-'track-query-strings' => [
-    'page',
-    'cursor',
-    '*Page',
-    'meals',
-    'freeFrom',
-],
+```
+journey-tracker-api/event
+journey-tracker-api/heartbeat
+journey-tracker-api/confirm
 ```
 
-Values are sent exactly as they arrive: `freeFrom=egg,dairy` is one value, `freeFrom[]=egg&freeFrom[]=dairy`
-is a list.
+They're registered outside the `web` group, so they carry no CSRF and no session, and they're
+authenticated by an encrypted token the package issues per request rather than by your app's auth.
+All three paths are configurable if they clash with your own.
 
 ## Usage
-
-Tag the current visitor's journey, for example after a conversion. Tags key off the visit key, so
-this only works on a request the middleware is tracking — on an excluded route, or outside a web
-request, it does nothing:
 
 ```php
 use Jpeters8889\JourneyTrackerLaravel\Facades\JourneyTracker;
 
-JourneyTracker::tag('Shop Purchase');
-```
+// mark the journey this visitor is on
+JourneyTracker::tag('shop-purchase');
 
-Expose a token to your frontend so it can post custom events to the event endpoint. The SDK ships no
-JavaScript by design — wiring the browser half is yours:
-
-```php
+// hand your frontend a token so it can post custom events
 JourneyTracker::token();
-```
 
-Query the collected counts back out with the fluent builder:
-
-```php
-use Jpeters8889\JourneyTrackerLaravel\Query\PageFilter;
-
-$response = JourneyTracker::query()
+// read the numbers back
+JourneyTracker::query()
     ->between('2026-01-01', '2026-01-31')
-    ->count('signups')
-    ->withPage(fn (PageFilter $filter): PageFilter => $filter->path('/register'))
-    ->get();
-
-$response->get('signups');
+    ->count('signups', fn (QueryDescriptor $query) => $query
+        ->withPage(fn (PageFilter $page) => $page->path('register')))
+    ->get()
+    ->get('signups');
 ```
+
+Queries are a synchronous call to us, unlike everything else here — run them on a schedule into your
+own tables rather than in a request.
+
+## Documentation
+
+Everything lives at [journey-tracker.cloud/docs](https://journey-tracker.cloud/docs):
+
+- [Installation](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/installation)
+- [Configuration](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/configuration) — excluding routes, query strings, queues
+- [Tagging a journey](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/tagging-a-journey)
+- [Tracking events](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/tracking-events) — the payload, the token, and worked examples in Vue, React and Blade
+- [Querying your data](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/querying-your-data/building-a-query)
+- [Testing](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/testing) — how to test an app with this installed
+
+This package also ships [Laravel Boost](https://github.com/laravel/boost) guidelines and an agent
+skill, so an AI assistant working in your codebase gets the same information.
 
 ## Testing
 
