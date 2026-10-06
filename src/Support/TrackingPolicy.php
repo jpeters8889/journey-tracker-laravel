@@ -23,7 +23,7 @@ class TrackingPolicy
             return false;
         }
 
-        if ($this->isPrefetchRequest($request)) {
+        if ($this->isPrefetchOrPrerenderRequest($request)) {
             return false;
         }
 
@@ -58,13 +58,15 @@ class TrackingPolicy
         return $request->hasHeader('X-Inertia-Partial-Component');
     }
 
-    protected function isPrefetchRequest(Request $request): bool
+    protected function isPrefetchOrPrerenderRequest(Request $request): bool
     {
         if ($request->header('Purpose') === 'prefetch') {
             return true;
         }
 
-        return str_contains((string) $request->header('Sec-Purpose', ''), 'prefetch');
+        $secPurpose = (string) $request->header('Sec-Purpose', '');
+
+        return str_contains($secPurpose, 'prefetch') || str_contains($secPurpose, 'prerender');
     }
 
     /** @return list<string> */

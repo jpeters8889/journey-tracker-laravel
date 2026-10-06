@@ -163,6 +163,23 @@ it('passes the user agent of the heartbeat request through', function (): void {
     Http::assertSent(fn (Request $request): bool => $request->data()['user_agent'] === 'JourneyBot/1.0');
 });
 
+it('sends no navigation headers, because a heartbeat is a fetch and would look like a bare request', function (): void {
+    fakePageViewEndpoint();
+
+    $this->withHeaders([
+        'Sec-Fetch-Mode' => 'cors',
+        'Sec-Fetch-Dest' => 'empty',
+    ])->postJson(heartbeatUrl(), ['token' => journeyToken()])->assertNoContent();
+
+    Http::assertSent(function (Request $request): bool {
+        $data = $request->data();
+
+        return $data['sec_fetch_mode'] === null
+            && $data['sec_fetch_dest'] === null
+            && $data['sec_fetch_user'] === null;
+    });
+});
+
 it('stamps the heartbeat with the current server time', function (): void {
     fakePageViewEndpoint();
 

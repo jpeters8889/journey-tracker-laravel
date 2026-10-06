@@ -25,6 +25,9 @@ it('posts the page view payload to the api', function (): void {
             'visit_key_was_new' => false,
             'confirmation_expected' => false,
             'query' => null,
+            'sec_fetch_mode' => null,
+            'sec_fetch_dest' => null,
+            'sec_fetch_user' => null,
         ]);
 });
 

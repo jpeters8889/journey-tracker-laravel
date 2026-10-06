@@ -17,6 +17,9 @@ final readonly class QueuedPageViewData
         public bool $visitKeyWasNew = false,
         public bool $confirmationExpected = false,
         public ?array $query = null,
+        public ?string $secFetchMode = null,
+        public ?string $secFetchDest = null,
+        public ?string $secFetchUser = null,
     ) {
         //
     }
@@ -34,6 +37,9 @@ final readonly class QueuedPageViewData
             'visit_key_was_new' => $this->visitKeyWasNew,
             'confirmation_expected' => $this->confirmationExpected,
             'query' => $this->query,
+            'sec_fetch_mode' => $this->secFetchMode,
+            'sec_fetch_dest' => $this->secFetchDest,
+            'sec_fetch_user' => $this->secFetchUser,
         ];
     }
 }

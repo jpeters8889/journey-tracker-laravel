@@ -43,7 +43,7 @@ it('rejects a speculation rules prefetch or prerender via Sec-Purpose', function
     $request->headers->set('Sec-Purpose', $value);
 
     expect(new TrackingPolicy()->shouldTrackRequest($request))->toBeFalse();
-})->with(['prefetch', 'prefetch;prerender', 'prefetch;anonymous-client-ip']);
+})->with(['prefetch', 'prerender', 'prefetch;prerender', 'prefetch;anonymous-client-ip']);
 
 it('tracks nothing at all when disabled', function (): void {
     config(['journey-tracker-laravel.enabled' => false]);

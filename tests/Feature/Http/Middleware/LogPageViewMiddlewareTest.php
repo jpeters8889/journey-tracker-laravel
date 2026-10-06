@@ -123,6 +123,56 @@ it('logs nothing for a request that is not a GET', function (): void {
     Http::assertNothingSent();
 });
 
+it('forwards the navigation headers the browser sent', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    $this->withHeaders([
+        'Sec-Fetch-Mode' => 'navigate',
+        'Sec-Fetch-Dest' => 'document',
+        'Sec-Fetch-User' => '?1',
+    ])->get('/blog')->assertOk();
+
+    Http::assertSent(function (Request $request): bool {
+        $data = $request->data();
+
+        return $data['sec_fetch_mode'] === 'navigate'
+            && $data['sec_fetch_dest'] === 'document'
+            && $data['sec_fetch_user'] === '?1';
+    });
+});
+
+it('sends the navigation headers as null when the browser sent none', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    $this->get('/blog')->assertOk();
+
+    Http::assertSent(function (Request $request): bool {
+        $data = $request->data();
+
+        return $data['sec_fetch_mode'] === null
+            && $data['sec_fetch_dest'] === null
+            && $data['sec_fetch_user'] === null;
+    });
+});
+
+it('logs nothing for a prerender, which sends the same navigation headers as a real visit', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    $this->withHeaders([
+        'Sec-Purpose' => 'prerender',
+        'Sec-Fetch-Mode' => 'navigate',
+        'Sec-Fetch-Dest' => 'document',
+    ])->get('/blog')->assertOk();
+
+    Http::assertNothingSent();
+});
+
 it('logs nothing for a prefetch', function (): void {
     fakePageViewEndpoint();
 

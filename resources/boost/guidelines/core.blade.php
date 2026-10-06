@@ -18,7 +18,7 @@ Full documentation is at https://journey-tracker.cloud/docs.
 ## Heartbeat and confirmation
 
 - @verbatim`@journeyTracker`@endverbatim in the main layout reports the page views the server never sees: back/forward cache restores and in-SPA history navigation. Do not remove it — those views are lost silently.
-- It also confirms on load that a real browser rendered the page, which is what keeps automated traffic out. Removing the directive turns that filtering off — page views are then recorded as they arrive.
+- It also confirms on load that a real browser rendered the page, which is one of several things that release a held first page view: a second page view, an event, a tag or a heartbeat do the same. Removing the directive does not turn the filtering off, it just removes the fastest proof.
 - It is safe in any layout. It renders nothing when the current request is not being tracked.
 @endscoped
 

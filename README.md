@@ -72,6 +72,24 @@ They're registered outside the `web` group, so they carry no CSRF and no session
 authenticated by an encrypted token the package issues per request rather than by your app's auth.
 All three paths are configurable if they clash with your own.
 
+## What it sends
+
+Per page view: the path, the matched route, a timestamp, and the visit key the package keeps in
+your session. Alongside those it forwards request headers the browser already sent, which the
+platform uses to tell a real navigation from an automated request:
+
+```
+User-Agent
+Sec-Fetch-Mode
+Sec-Fetch-Dest
+Sec-Fetch-User
+```
+
+`User-Agent` is checked against known bots on arrival and then discarded: it is never stored, and it
+is redacted from your API logs. The `Sec-Fetch-*` values say whether this was a real top-level
+navigation. Heartbeats send none of them, because they come from a `fetch()` rather than a
+navigation and would describe the request the script made rather than the page the visitor is on.
+
 ## Usage
 
 ```php

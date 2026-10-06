@@ -57,12 +57,15 @@ It catches the page views that never reach the server: back/forward cache restor
 traversal inside an SPA where the framework restores from history rather than re-requesting.
 Without it those views are lost silently.
 
-It also confirms on load that a real browser rendered the page. The first page view of a visit is
-held unwritten by the platform until that confirmation arrives, so automated traffic that stores no
-cookies and runs no JavaScript is never recorded and never counts toward ingest credits. Later page
-views in the same visit are recorded immediately — a returning visit key is itself proof of a real
-client. Removing the directive does not break tracking; page views are recorded immediately and
-nothing is filtered.
+It also confirms on load that a real browser rendered the page. The platform holds the first page
+view of a visit unwritten only when nothing else vouches for it, and the confirmation is one of
+several things that release it: a second page view, an event, a tag, or a heartbeat will do the
+same, and a request carrying `Sec-Fetch-Mode: navigate` and `Sec-Fetch-Dest: document` is never held
+in the first place. Automated traffic that stores no cookies, looks nothing like a browser and never
+asks for anything else is never recorded and never counts toward ingest credits.
+
+Removing the directive does not break tracking. Page views are still recorded and unvouched-for
+traffic is still filtered; what you lose are the views the server never sees.
 
 A visit ends after a period of silence, at which point the next page view starts a new journey with
 a new visit key. The platform publishes that threshold on every page view response and the SDK

@@ -62,6 +62,9 @@ class LogPageViewMiddleware
             $this->trackedRequest->visitKeyWasNew(),
             $this->trackedRequest->confirmationExpected(),
             $this->trackedQuery->filter($request->query()),
+            $request->header('Sec-Fetch-Mode'),
+            $request->header('Sec-Fetch-Dest'),
+            $request->header('Sec-Fetch-User'),
         ))->onQueue($this->journeyTracker->queue());
 
         $token = $this->trackedRequest->token();
