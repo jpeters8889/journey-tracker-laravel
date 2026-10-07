@@ -251,6 +251,19 @@ export default () => {
 
 Guard against SSR, and swallow failures — analytics must never break a page.
 
+## When sending fails
+
+The queued jobs never throw — a failed send is swallowed and the page view is gone. They dispatch
+two events so the application can notice:
+
+- `Events\JourneyTrackerBlocked` — the team has used all of its credits and the platform has paused
+  ingest. Carries `IngestType $type`.
+- `Events\JourneyTrackerFailed` — any other error status, or the request never completing. Carries
+  `IngestType $type`, `?int $status` (`null` when there was no response) and `Throwable $exception`.
+
+Listen for them like any other event. Neither is dispatched when a send succeeds, and reads through
+`JourneyTracker::query()` report their own errors rather than using these.
+
 ## Querying collected data
 
 `JourneyTracker::query()` returns a fluent builder. Each `count()` declares one aliased metric, and

@@ -138,3 +138,9 @@ it('renders nothing through the blade directive when the request is not tracked'
 
     expect($this->get('/cs-adm/dashboard')->getContent())->toBe('');
 });
+
+it('leaves error responses for the caller to handle on the shared client', function (): void {
+    Http::fake(['*' => Http::response('boom', 500)]);
+
+    expect(Http::journeyTracker()->post('/api/v1/tag', [])->status())->toBe(500);
+});

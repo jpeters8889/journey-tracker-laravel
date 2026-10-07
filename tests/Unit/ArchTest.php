@@ -24,6 +24,11 @@ arch('data objects stay behind the layers that queue them')
         JourneyTracker::class,
     ]);
 
+arch('events are immutable value objects')
+    ->expect('Jpeters8889\JourneyTrackerLaravel\Events')
+    ->toBeFinal()
+    ->toBeReadonly();
+
 arch('every job is queueable')
     ->expect('Jpeters8889\JourneyTrackerLaravel\Jobs')
     ->toImplement(ShouldQueue::class);

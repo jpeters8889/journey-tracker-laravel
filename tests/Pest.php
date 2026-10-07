@@ -43,40 +43,40 @@ function legacyJourneyToken(string $visitId = 'session-abc', string $path = 'blo
     return Crypt::encrypt(['session_id' => $visitId, 'path' => $path]);
 }
 
-function fakePageViewEndpoint(): void
+function fakePageViewEndpoint(int $status = 200): void
 {
     Http::fake([
-        '*/api/v1/page-view' => Http::response(),
+        '*/api/v1/page-view' => Http::response(status: $status),
     ]);
 }
 
-function fakeConfirmEndpoint(): void
+function fakeConfirmEndpoint(int $status = 200): void
 {
     Http::fake([
-        '*/api/v1/page-view/confirm' => Http::response(),
+        '*/api/v1/page-view/confirm' => Http::response(status: $status),
     ]);
 }
 
-function fakeEventEndpoint(): void
+function fakeEventEndpoint(int $status = 200): void
 {
     Http::fake([
-        '*/api/v1/event' => Http::response(),
+        '*/api/v1/event' => Http::response(status: $status),
     ]);
 }
 
-function fakeTagEndpoint(): void
+function fakeTagEndpoint(int $status = 200): void
 {
     Http::fake([
-        '*/api/v1/tag' => Http::response(),
+        '*/api/v1/tag' => Http::response(status: $status),
     ]);
 }
 
-function fakeAllEndpoints(): void
+function fakeAllEndpoints(int $status = 200): void
 {
     Http::fake([
-        '*/api/v1/page-view' => Http::response(),
-        '*/api/v1/event' => Http::response(),
-        '*/api/v1/tag' => Http::response(),
+        '*/api/v1/page-view' => Http::response(status: $status),
+        '*/api/v1/event' => Http::response(status: $status),
+        '*/api/v1/tag' => Http::response(status: $status),
     ]);
 }
 

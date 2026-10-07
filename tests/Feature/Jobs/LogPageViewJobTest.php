@@ -7,6 +7,11 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Jpeters8889\JourneyTrackerLaravel\Jobs\LogPageViewJob;
 use Jpeters8889\JourneyTrackerLaravel\Support\VisitKey;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Event;
+use Jpeters8889\JourneyTrackerLaravel\Enums\IngestType;
+use Jpeters8889\JourneyTrackerLaravel\Events\JourneyTrackerBlocked;
+use Jpeters8889\JourneyTrackerLaravel\Events\JourneyTrackerFailed;
 
 it('posts the page view payload to the api', function (): void {
     fakePageViewEndpoint();
@@ -64,3 +69,70 @@ it('keeps the configured threshold when the platform publishes nothing usable', 
     'a string' => ['30'],
     'zero' => [0],
 ]);
+
+it('reports blocked ingest when the platform has paused it', function (): void {
+    Event::fake();
+
+    fakePageViewEndpoint(402);
+
+    app()->call([new LogPageViewJob(queuedPageViewData()), 'handle']);
+
+    Event::assertDispatched(
+        JourneyTrackerBlocked::class,
+        fn (JourneyTrackerBlocked $event): bool => $event->type === IngestType::PAGE_VIEW,
+    );
+
+    Event::assertNotDispatched(JourneyTrackerFailed::class);
+});
+
+it('reports a failed page view with the status the platform returned', function (): void {
+    Event::fake();
+
+    Http::fake(['*' => Http::response('boom', 500)]);
+
+    app()->call([new LogPageViewJob(queuedPageViewData()), 'handle']);
+
+    Event::assertDispatched(
+        JourneyTrackerFailed::class,
+        fn (JourneyTrackerFailed $event): bool => $event->type === IngestType::PAGE_VIEW
+            && $event->status === 500
+            && $event->exception instanceof RequestException,
+    );
+
+    Event::assertNotDispatched(JourneyTrackerBlocked::class);
+});
+
+it('reports a failed page view with no status when the api is unreachable', function (): void {
+    Event::fake();
+
+    Http::fake(fn () => throw new ConnectionException('offline'));
+
+    app()->call([new LogPageViewJob(queuedPageViewData()), 'handle']);
+
+    Event::assertDispatched(
+        JourneyTrackerFailed::class,
+        fn (JourneyTrackerFailed $event): bool => $event->type === IngestType::PAGE_VIEW
+            && $event->status === null
+            && $event->exception instanceof ConnectionException,
+    );
+});
+
+it('reports nothing when the page view is accepted', function (): void {
+    Event::fake();
+
+    fakePageViewEndpoint();
+
+    app()->call([new LogPageViewJob(queuedPageViewData()), 'handle']);
+
+    Event::assertNothingDispatched();
+});
+
+it('keeps the configured threshold when the platform blocks ingest', function (): void {
+    config(['journey-tracker-laravel.visit-threshold-minutes' => 15]);
+
+    fakePageViewEndpoint(402);
+
+    app()->call([new LogPageViewJob(queuedPageViewData()), 'handle']);
+
+    expect(app(VisitKey::class)->thresholdMinutes())->toBe(15);
+});

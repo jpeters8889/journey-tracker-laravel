@@ -90,6 +90,46 @@ is redacted from your API logs. The `Sec-Fetch-*` values say whether this was a 
 navigation. Heartbeats send none of them, because they come from a `fetch()` rather than a
 navigation and would describe the request the script made rather than the page the visitor is on.
 
+## When we can't send
+
+Sending is fire and forget. The queued jobs swallow every failure, nothing is retried, and your
+request path is never affected by what happens to us. What's new is that they tell you about it.
+
+Two events, both in `Jpeters8889\JourneyTrackerLaravel\Events`:
+
+`JourneyTrackerBlocked` is dispatched for one thing only — your team has used all of its credits for
+the billing period and we've stopped accepting data until the period rolls over or you add more. It
+carries the `IngestType` that was turned away.
+
+`JourneyTrackerFailed` covers everything else: an error status from us, or the request never getting
+there at all. It carries the `IngestType`, the HTTP status as `?int $status` (`null` when the request
+didn't complete — connection refused, timeout, DNS), and the `Throwable`.
+
+```php
+use Illuminate\Support\Facades\Event;
+use Jpeters8889\JourneyTrackerLaravel\Events\JourneyTrackerBlocked;
+
+Event::listen(JourneyTrackerBlocked::class, function (JourneyTrackerBlocked $event): void {
+    Log::warning('Journey Tracker has paused ingest', ['type' => $event->type->value]);
+});
+```
+
+`IngestType` says which call it was:
+
+| Case | Value | Sent when |
+| --- | --- | --- |
+| `PAGE_VIEW` | `page_view` | a page view or heartbeat is recorded |
+| `PAGE_VIEW_CONFIRMATION` | `page_view_confirmation` | the browser confirms a page view |
+| `EVENT` | `event` | a custom event is tracked |
+| `TAG` | `tag` | a journey is tagged |
+
+New kinds of data add a case here rather than another pair of events, so `match` on it with a
+default arm.
+
+A failure is usually transient, and a page view that fails is gone — nothing is held back or sent
+again later. This covers sending only: `JourneyTracker::query()` is a synchronous read that reports
+its errors from the call itself.
+
 ## Usage
 
 ```php
@@ -123,6 +163,7 @@ Everything lives at [journey-tracker.cloud/docs](https://journey-tracker.cloud/d
 - [Tracking events](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/tracking-events) — the payload, the token, and worked examples in Vue, React and Blade
 - [Querying your data](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/querying-your-data/building-a-query)
 - [Testing](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/testing) — how to test an app with this installed
+- [Error handling](https://journey-tracker.cloud/docs/sending-data/laravel-sdk/error-handling) — the events we dispatch when we can't send
 
 This package also ships [Laravel Boost](https://github.com/laravel/boost) guidelines and an agent
 skill, so an AI assistant working in your codebase gets the same information.

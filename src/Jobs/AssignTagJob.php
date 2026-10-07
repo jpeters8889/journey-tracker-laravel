@@ -8,15 +8,16 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Http;
 use Jpeters8889\JourneyTrackerLaravel\DataObjects\QueuedTagData;
-use Throwable;
+use Jpeters8889\JourneyTrackerLaravel\Enums\IngestType;
+use Jpeters8889\JourneyTrackerLaravel\Concerns\SendsToJourneyTracker;
 
 class AssignTagJob implements ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
     use Queueable;
+    use SendsToJourneyTracker;
 
     public function __construct(protected QueuedTagData $data)
     {
@@ -25,10 +26,6 @@ class AssignTagJob implements ShouldQueue
 
     public function handle(): void
     {
-        try {
-            Http::journeyTracker()->post('/api/v1/tag', $this->data->toArray());
-        } catch (Throwable) {
-            //
-        }
+        $this->send(IngestType::TAG, '/api/v1/tag', $this->data->toArray());
     }
 }
