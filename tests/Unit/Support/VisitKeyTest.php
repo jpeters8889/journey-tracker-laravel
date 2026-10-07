@@ -150,6 +150,12 @@ it('does not rewrite the cached threshold when it has not changed', function ():
     expect($visitKey->thresholdMinutes())->toBe(30);
 });
 
+it('has no stored visit when the request has no session', function (): void {
+    $visitKey = new VisitKey(Request::create('/blog'), app(Repository::class));
+
+    expect($visitKey->stored())->toBeNull();
+});
+
 function visitSession(): Store
 {
     return new Store('journey-tracker-test', new ArraySessionHandler(120));

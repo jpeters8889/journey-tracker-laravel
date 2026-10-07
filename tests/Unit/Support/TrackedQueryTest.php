@@ -96,3 +96,10 @@ it('turns each pattern into an anchored regular expression for the browser', fun
 
     expect(new TrackedQuery()->scriptPatterns())->toBe(['^page$', '^.*Page$', '^filter\.x$']);
 });
+
+it('drops a value it cannot read as text', function (mixed $value): void {
+    expect(new TrackedQuery()->filter(['page' => $value]))->toBeNull();
+})->with([
+    'nothing at all' => [null],
+    'an object' => [new stdClass()],
+]);
