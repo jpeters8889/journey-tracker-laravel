@@ -286,3 +286,17 @@ it('renders a heartbeat script that follows changes to the tracked query string'
         ->toContain('^page$')
         ->toContain('^.*Page$');
 });
+
+it('renders no script on a page we saw but did not count, even though it has a token', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+    trackedRoute('/recipes', fn (): string => app(JourneyTracker::class)->heartbeatScript());
+
+    $this->get('/blog')->assertOk();
+
+    $response = $this->get('/recipes', ['Purpose' => 'prefetch']);
+
+    expect($response->headers->has('X-Journey-Token'))->toBeTrue()
+        ->and($response->getContent())->toBe('');
+});

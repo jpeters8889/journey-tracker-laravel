@@ -38,6 +38,8 @@ class LogPageViewMiddleware
      */
     public function handle(Request $request, Closure $next): mixed
     {
+        $this->trackedRequest->observe();
+
         if ($this->trackingPolicy->shouldTrackRequest($request)) {
             $this->trackedRequest->start();
         }
@@ -46,28 +48,26 @@ class LogPageViewMiddleware
 
         $visitId = $this->trackedRequest->visitId();
 
-        if ($visitId === null) {
-            return $response;
+        if ($visitId !== null) {
+            $this->trackedRequest->persistVisit();
+
+            LogPageViewJob::dispatch(new QueuedPageViewData(
+                $visitId,
+                $request->path(),
+                $request->route()?->getName(),
+                $request->route()?->uri(),
+                time(),
+                $request->userAgent(),
+                $this->trackedRequest->visitKeyWasNew(),
+                $this->trackedRequest->confirmationExpected(),
+                $this->trackedQuery->filter($request->query()),
+                $request->header('Sec-Fetch-Mode'),
+                $request->header('Sec-Fetch-Dest'),
+                $request->header('Sec-Fetch-User'),
+            ))->onQueue($this->journeyTracker->queue());
         }
 
-        $this->trackedRequest->persistVisit();
-
-        LogPageViewJob::dispatch(new QueuedPageViewData(
-            $visitId,
-            $request->path(),
-            $request->route()?->getName(),
-            $request->route()?->uri(),
-            time(),
-            $request->userAgent(),
-            $this->trackedRequest->visitKeyWasNew(),
-            $this->trackedRequest->confirmationExpected(),
-            $this->trackedQuery->filter($request->query()),
-            $request->header('Sec-Fetch-Mode'),
-            $request->header('Sec-Fetch-Dest'),
-            $request->header('Sec-Fetch-User'),
-        ))->onQueue($this->journeyTracker->queue());
-
-        $token = $this->trackedRequest->token();
+        $token = $this->trackedRequest->visitToken();
 
         if ($token !== null) {
             $response->headers->set('X-Journey-Token', $token);

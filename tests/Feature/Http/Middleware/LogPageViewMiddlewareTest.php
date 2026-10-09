@@ -242,6 +242,49 @@ it('returns null from the deprecated accessor when the request is not tracked', 
     expect($this->get('/cs-adm/dashboard')->getContent())->toBe('null');
 });
 
+it('does not consume the new visit key when it declines to count a request', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    $this->get('/blog', ['Purpose' => 'prefetch'])->assertOk();
+
+    Http::assertNothingSent();
+
+    $this->get('/blog')->assertOk();
+
+    Http::assertSent(fn (Request $request): bool => $request->data()['visit_key_was_new'] === true);
+});
+
+it('hands a token back on a request it declined to count', function (array $headers): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+
+    $this->get('/blog')->assertOk();
+
+    $response = $this->withHeaders($headers)->get('/blog');
+
+    expect($response->headers->has('X-Journey-Token'))->toBeTrue();
+})->with([
+    'a prefetch' => [['Purpose' => 'prefetch']],
+    'a prerender' => [['Sec-Purpose' => 'prerender']],
+    'an inertia partial reload' => [['X-Inertia-Partial-Component' => 'Blog/Index']],
+]);
+
+it('still hands back no token for a path the app asked us not to track', function (): void {
+    fakePageViewEndpoint();
+
+    config(['journey-tracker-laravel.dont-track' => ['cs-adm/*']]);
+
+    trackedRoute('/blog', fn (): string => 'ok');
+    trackedRoute('/cs-adm/dashboard', fn (): string => 'ok');
+
+    $this->get('/blog')->assertOk();
+
+    expect($this->get('/cs-adm/dashboard')->headers->has('X-Journey-Token'))->toBeFalse();
+});
+
 it('reports the visit key as freshly minted on a first request and reused on the next', function (): void {
     fakePageViewEndpoint();
 

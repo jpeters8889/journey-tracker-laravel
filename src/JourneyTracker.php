@@ -33,7 +33,7 @@ class JourneyTracker
 
     public function token(): ?string
     {
-        return $this->trackedRequest->token();
+        return $this->trackedRequest->visitToken();
     }
 
     public function tag(string $tag): void

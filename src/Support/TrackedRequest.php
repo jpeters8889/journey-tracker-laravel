@@ -16,8 +16,14 @@ class TrackedRequest
         protected Request $request,
         protected Encrypter $encrypter,
         protected VisitKey $visitKey,
+        protected TrackingPolicy $trackingPolicy,
     ) {
         //
+    }
+
+    public function observe(): void
+    {
+        $this->request->attributes->set($this->observedKey(), true);
     }
 
     public function start(): void
@@ -88,6 +94,49 @@ class TrackedRequest
         return $token;
     }
 
+    public function visitToken(): ?string
+    {
+        $token = $this->token();
+
+        if ($token !== null) {
+            return $token;
+        }
+
+        /** @var string|null $cached */
+        $cached = $this->request->attributes->get($this->tokenKey());
+
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        if ( ! $this->request->attributes->getBoolean($this->observedKey())) {
+            return null;
+        }
+
+        if ( ! $this->trackingPolicy->shouldTrackPath(
+            $this->request->path(),
+            $this->request->route()?->getName(),
+            $this->request->route()?->uri(),
+        )) {
+            return null;
+        }
+
+        $visit = $this->visitKey->stored();
+
+        if ( ! $visit instanceof Visit) {
+            return null;
+        }
+
+        $minted = $this->encrypter->encrypt([
+            'visit_id' => $visit->id,
+            'path' => $this->request->path(),
+        ]);
+
+        $this->request->attributes->set($this->tokenKey(), $minted);
+
+        return $minted;
+    }
+
     /** @return array{visit_id: string, path: string}|null */
     private function payload(): ?array
     {
@@ -122,5 +171,10 @@ class TrackedRequest
     private function tokenKey(): string
     {
         return 'journey-tracker.token';
+    }
+
+    private function observedKey(): string
+    {
+        return 'journey-tracker.observed';
     }
 }

@@ -172,3 +172,35 @@ it('still accepts an event from a token minted before the visit id rename', func
 
     Http::assertSent(fn (Request $request): bool => $request->data()['session_id'] === 'session-abc');
 });
+
+it('accepts an event from a page we saw but did not count', function (): void {
+    fakePageViewEndpoint();
+
+    trackedRoute('/blog', fn (): string => 'ok');
+    trackedRoute('/recipes', fn (): string => 'ok');
+
+    $this->get('/blog')->assertOk();
+
+    $visitId = session()->get('journey-tracker.visit')['id'];
+
+    $token = $this->get('/recipes', ['X-Inertia-Partial-Component' => 'Recipes/Index'])
+        ->headers->get('X-Journey-Token');
+
+    expect($token)->not->toBeNull();
+
+    fakeEventEndpoint();
+
+    $this->postJson(eventUrl(), [
+        'token' => $token,
+        'event_type' => 'scrolled_into_view',
+        'event_identifier' => 'RecipeDetailCard',
+    ])->assertNoContent();
+
+    Http::assertSent(function (Request $request) use ($visitId): bool {
+        $data = $request->data();
+
+        return $data['session_id'] === $visitId
+            && $data['path'] === 'recipes'
+            && $data['event_identifier'] === 'RecipeDetailCard';
+    });
+});
